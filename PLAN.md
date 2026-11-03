@@ -113,14 +113,30 @@ HMTT/
 - Ghép k=3 đoạn ≈ 631 token (p90 ≈ 1.020), k=5 ≈ 1.033 token (p90 ≈ 1.676). → Với k > 1, mặc định **đọc từng đoạn riêng rồi chọn đáp án có điểm cao nhất**; ghép đoạn (1024 token) chỉ là thí nghiệm phụ.
 - 3 bài không có câu hỏi có nhãn: Edward II của Anh, Đế quốc Đức (train), Đế quốc Nga (test). Đoạn văn của chúng vẫn nằm trong kho, đóng vai trò nhiễu khi truy hồi.
 
-### Giai đoạn 2 — Retriever (2 ngày)
-- [ ] Tách `HybridRetriever` ra `src/retriever/hybrid.py`, cho phép chọn chế độ `bm25 | dense | hybrid`.
-- [ ] Build `data/index_qa/` trên **cả 3 split** (1.862 đoạn).
-- [ ] Cải thiện BM25: tách từ tiếng Việt (ví dụ `underthesea.word_tokenize`) thay cho `.split()`, rồi so sánh hai cách.
-- [ ] `eval_retriever.py`: đo Recall@{1,3,5,10} và MRR trên câu hỏi **dev/test trả lời được**. Đoạn đúng (gold) là `context_id` của câu hỏi.
-- [ ] Chọn cấu hình retriever và k bằng tập **dev**.
+### Giai đoạn 2 — Retriever (2 ngày) ✅
+- [x] `src/retriever/hybrid.py`: lớp `Retriever` với 3 chế độ `bm25 | dense | hybrid`. Kho chỉ 1.862 đoạn nên chấm điểm toàn bộ kho cho mỗi câu hỏi, và RRF gộp trên thứ hạng đầy đủ (bản cũ chỉ gộp top 3k). Tiền xử lý dùng chung nằm ở `text.py`.
+- [x] Build `data/index_qa/` trên **cả 3 split** (1.862 đoạn): `meta.parquet`, `dense_seg.faiss`, `dense_raw.faiss`, `info.json`. BM25 dựng lại khi load (< 1 giây), không lưu pickle.
+- [x] So sánh 2 cách tách token cho BM25: theo âm tiết (`\w+`) và theo từ (`underthesea`). Dense dùng `bkai-foundation-models/vietnamese-bi-encoder`, model này yêu cầu input đã tách từ; có so sánh với văn bản thô.
+- [x] `eval_retriever.py`: Recall@{1,3,5,10,20} và MRR trên câu **trả lời được**, tách theo VN/TG. Tuỳ chọn `--sweep` quét trọng số RRF.
+- [x] Chọn cấu hình trên **dev**, kiểm lại trên **train** (retriever không huấn luyện nên dùng train được). **Test chưa chạy.**
 
-**Xong khi:** có bảng Recall@k cho 3 chế độ × 2 cách tách từ; đã chốt cấu hình.
+**Kết quả** (`reports/retriever_{dev,train}.md`, `*_sweep.csv`):
+
+| Cấu hình | R@1 dev | R@5 dev | MRR dev | R@5 train | MRR train |
+|---|---|---|---|---|---|
+| BM25 âm tiết | 76.1 | 90.4 | 0.824 | 82.4 | 0.721 |
+| BM25 tách từ | 74.8 | 88.7 | 0.809 | 81.8 | 0.722 |
+| Dense tách từ | 52.2 | 73.7 | 0.617 | — | — |
+| Hybrid RRF (k=60, w=1) | 67.3 | 86.2 | 0.763 | 84.6 | 0.719 |
+| **Hybrid RRF (k=5, w_dense=0.7) — chọn** | 71.9 | **93.4** | 0.813 | **88.0** | **0.752** |
+
+- Tách từ bằng underthesea **không giúp** BM25: nhỉnh hơn ở bài VN, kém hơn ở bài TG (có thể do tách sai tên riêng nước ngoài).
+- Dense yếu khi dùng một mình: 11,8% số đoạn dài hơn 256 token nên bị cắt khi nhúng. Dù vậy, dense vẫn bổ sung tốt cho BM25 nếu RRF dùng k nhỏ và trọng số dense thấp hơn BM25. Gộp bằng nhau (k=60, w=1) thì hybrid thua BM25 trên dev.
+- Dev dễ hơn train với BM25 (R@5 90.4 so với 82.4). Cấu hình được chọn đứng trong nhóm đầu ở cả hai tập.
+- Hạn chế: R@1 của hybrid thấp hơn BM25 trên dev. Nếu Reader chỉ đọc 1 đoạn thì cần xem lại ở E2.
+- Mặc định cho Giai đoạn 4–5: hybrid đã chọn, k ∈ {1, 3, 5}. BM25 và dense vẫn giữ để so sánh trong E2.
+
+**Xong khi:** có bảng Recall@k cho 3 chế độ × 2 cách tách từ; đã chốt cấu hình. ✅
 
 ### Giai đoạn 3 — Metric & baseline (2 ngày)
 - [ ] `metrics.py`: EM và F1 theo token, chuẩn hoá tiếng Việt (NFC, chữ thường, bỏ dấu câu, gộp khoảng trắng; **không** bỏ dấu thanh). Ghi riêng: HasAns-EM/F1, NoAns-accuracy (theo kiểu `squad_v2`).

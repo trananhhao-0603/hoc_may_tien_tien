@@ -11,7 +11,7 @@ Người dùng nhập một câu hỏi lịch sử. Hệ thống tìm đoạn v�
 |---|---|---|
 | 0 | Dọn dẹp, bảo mật, git, `requirements.txt` | ✅ |
 | 1 | Chuẩn hoá dữ liệu QA | ✅ |
-| 2 | Retriever | ⬜ |
+| 2 | Retriever (hybrid BM25 + dense, R@5 dev 93,4%) | ✅ |
 | 3 | Metric & baseline | ⬜ |
 | 4 | Reader ViT5 | ⬜ |
 | 5 | Thí nghiệm | ⬜ |
@@ -23,12 +23,15 @@ Người dùng nhập một câu hỏi lịch sử. Hệ thống tìm đoạn v�
 ```
 src/data/        build_corpus.py, split_balanced.py, survey_viquad.py   — xây corpus từ ViQuAD 2.0
                  length_stats.py                                        — thống kê độ dài -> reports/data_stats.md
-src/retriever/   build_index.py                                         — index BM25 + FAISS
-tests/           test_build.py, test_survey.py (logic, không cần dữ liệu)
+src/retriever/   text.py         — tách token (âm tiết / tách từ underthesea)
+                 build_index.py  — build data/index_qa/ (meta + FAISS, cả 3 split)
+                 hybrid.py       — Retriever: bm25 | dense | hybrid (RRF có trọng số)
+                 eval_retriever.py — Recall@k, MRR -> reports/retriever_<split>.md
+tests/           test_build.py, test_survey.py, test_retriever.py (logic, không cần dữ liệu)
                  test_split_leak.py (kiểm tra dữ liệu thật: chống rò rỉ, nhãn hợp lệ)
 data/processed/  corpus.parquet (1.862 đoạn), qa_pairs.parquet (12.009 câu hỏi có nhãn),
                  titles_inventory.csv (bài nào là lịch sử / Việt Nam — đã rà tay), splits_report.txt
-reports/         data_stats.md
+reports/         data_stats.md, retriever_{dev,train}.md/.json, retriever_*_sweep.csv
 legacy/          mã nguồn và dữ liệu của dự án DSS cũ (không dùng tiếp, giữ để tham khảo)
 ```
 
@@ -47,6 +50,20 @@ Trên Colab, torch đã có sẵn, chỉ cần chạy `pip install -r requiremen
 python tests/test_build.py
 python tests/test_survey.py
 python tests/test_split_leak.py
+python tests/test_retriever.py
+```
+
+## Retriever
+
+```bash
+python src/retriever/build_index.py                     # ~4 phút trên CPU -> data/index_qa/
+python src/retriever/eval_retriever.py --split dev --sweep
+```
+
+```python
+from hybrid import Retriever          # sys.path gồm src/retriever
+r = Retriever.load("data/index_qa")   # mặc định: hybrid, BM25 âm tiết + dense tách từ, RRF k=5, w_dense=0.7
+r.search("Chiến thắng Điện Biên Phủ diễn ra năm nào?", k=5)
 ```
 
 ## Dữ liệu
