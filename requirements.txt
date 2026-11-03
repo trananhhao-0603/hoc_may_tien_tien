@@ -7,16 +7,20 @@
 # --- dữ liệu ---
 pandas==3.1.0
 pyarrow==26.0.1
-datasets==5.1.0
+datasets==5.0.1
 
 # --- mô hình (Reader) ---
-transformers==5.22.1
+# transformers 5.x (đã thử 5.22.1) KHÔNG tải được tokenizer của VietAI/vit5-base
+# (TypeError trong Unigram khi chuyển spiece.model) -> dùng dòng 4.x, bản cuối 4.57.6.
+transformers==4.57.6
+tokenizers==0.22.2
+huggingface-hub==0.36.2
 accelerate==1.15.0
 sentencepiece==0.2.2
 evaluate==0.4.6
 
 # --- Retriever ---
-sentence-transformers==6.2.0
+sentence-transformers==5.7.0
 faiss-cpu==1.15.1
 rank-bm25==0.2.2
 underthesea==9.5.0
@@ -24,4 +28,4 @@ underthesea==9.5.0
 # --- tiện ích, test, demo ---
 pyyaml==6.0.3
 pytest==9.2.0
-gradio==6.31.0
+gradio==6.17.3

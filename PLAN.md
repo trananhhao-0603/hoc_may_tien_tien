@@ -38,8 +38,8 @@ Câu hỏi ──► [Retriever]  BM25 + FAISS + RRF  ──► top-k đoạn v�
 | Tài nguyên | Số lượng | Dùng cho |
 |---|---|---|
 | `corpus.parquet` | 1.862 đoạn / 38 bài (VN 536, TG 1.326) | Kho tri thức cho Retriever |
-| `qa_pairs.parquet` | 13.997 câu hỏi (10.114 trả lời được, 3.883 không trả lời được) | Train/đánh giá Reader |
-| Split theo bài | train 11.103 / dev 1.536 / test 1.358 câu hỏi | Giữ nguyên |
+| `qa_pairs.parquet` | **12.009** câu hỏi có nhãn (8.126 trả lời được, 3.883 không trả lời được) — đã sửa ở Giai đoạn 1 | Train/đánh giá Reader |
+| Split theo bài | train 9.394 / dev 1.329 / test 1.286 câu hỏi | Giữ nguyên |
 | `corpus_all.parquet` | toàn bộ ViQuAD (~176–184 bài) | Thí nghiệm thêm dữ liệu ngoài miền (RQ4) |
 
 **Nguyên tắc chống rò rỉ cho hỏi đáp** (khác với dự án cũ):
@@ -70,11 +70,11 @@ HMTT/
 ├── PLAN.md, README.md, requirements.txt, .gitignore, .env.example
 ├── configs/            reader_vit5.yaml, reader_extractive.yaml, retriever.yaml
 ├── data/
-│   ├── processed/      corpus.parquet, qa_pairs.parquet (+ qa_clean.parquet)
+│   ├── processed/      corpus.parquet, qa_pairs.parquet
 │   ├── index_qa/       faiss.index, bm25.pkl, index_meta.parquet   ← index cả 3 split
 │   └── predictions/    {run_name}.jsonl
 ├── src/
-│   ├── data/           build_corpus.py, split_balanced.py, clean_qa.py
+│   ├── data/           build_corpus.py, split_balanced.py, survey_viquad.py, length_stats.py
 │   ├── retriever/      build_index.py, hybrid.py, eval_retriever.py
 │   ├── reader/         train_seq2seq.py, train_extractive.py, infer.py
 │   ├── eval/           metrics.py (EM/F1 tiếng Việt, squad_v2), evaluate_pipeline.py
@@ -97,14 +97,21 @@ HMTT/
 
 **Xong khi:** repo sạch, không còn khoá bí mật, `pip install -r requirements.txt` chạy được.
 
-### Giai đoạn 1 — Chuẩn hoá dữ liệu QA (1 ngày)
-- [ ] Điều tra khoảng 1.988 câu trả lời được nhưng `answer_span_ok = False`. Nghi do `normalize_vi` sửa context mà không sửa `answer_start`. Sửa lại hoặc tính lại span.
-- [ ] Tạo `qa_clean.parquet` với các cột: `qa_id, question, context_id, answer_text, answer_start, is_impossible, split, is_vietnam`.
-- [ ] Nhãn đích cho Reader sinh: `answer_text`, hoặc `"không có câu trả lời"` nếu `is_impossible`.
-- [ ] Viết test chống rò rỉ: không `qa_id` nào nằm ở 2 split; mỗi bài chỉ thuộc 1 split.
-- [ ] Thống kê độ dài câu hỏi, đáp án và đoạn văn (theo token ViT5) để chọn `max_length`.
+### Giai đoạn 1 — Chuẩn hoá dữ liệu QA (1 ngày) ✅
+- [x] Điều tra 1.988 câu "trả lời được" nhưng `answer_span_ok = False`. **Giả thuyết ban đầu sai.** Nguyên nhân thật: split `test` chính thức của ViQuAD trên HF **không có nhãn** (`answers=None`, `is_impossible` luôn `False`). → `build_corpus.py` bỏ các câu không nhãn nhưng giữ đoạn văn trong kho tri thức.
+- [x] Lỗi kèm theo: code cũ đọc trường `plausible` (không tồn tại) → `plausible_answer` rỗng ở mọi dòng. Sửa thành `plausible_answers` (giờ có đủ 3.883/3.883).
+- [x] `qa_id` dùng `id` gốc của ViQuAD, ghép tên split (`train:0013-0001-0001`), vì `id` chỉ duy nhất trong từng split chính thức (152 id bị trùng giữa train và validation).
+- [x] 74 câu có `answer_start` lệch (chủ yếu ±1 ký tự do chuẩn hoá khoảng trắng): căn lại theo lần xuất hiện gần nhất nếu lệch ≤ 20 ký tự. 1 câu lệch 608 ký tự → đánh `answer_span_ok=False`, không đoán.
+- [x] Không tạo file `qa_clean.parquet` riêng: `qa_pairs.parquet` giờ đã sạch. Có thêm cột `viquad_split`. Nhãn `"không có câu trả lời"` cho câu `is_impossible` sẽ được gán lúc tạo dataset ở Giai đoạn 4.
+- [x] `tests/test_split_leak.py`: kiểm tra trên dữ liệu thật (không rò rỉ bài/đoạn/câu hỏi, split câu hỏi trùng split đoạn văn, đáp án nằm đúng vị trí, câu không trả lời được có `plausible_answer`).
+- [x] `src/data/length_stats.py` → `reports/data_stats.md`.
+- [x] **Phát sinh:** `transformers` 5.x không tải được tokenizer của `VietAI/vit5-base` → ghim lại `transformers==4.57.6` (cùng `tokenizers`, `huggingface-hub`, `datasets`, `sentence-transformers`, `gradio` tương thích; đã giải phụ thuộc thử cho Colab và máy local).
 
-**Xong khi:** có `qa_clean.parquet`, test chống rò rỉ chạy qua, có bảng thống kê độ dài.
+**Kết quả quan trọng cho các giai đoạn sau** (xem `reports/data_stats.md`):
+- Input 1 đoạn: p99 = 516 token → `max_source_length=512` chỉ cắt 1,0%.
+- Đáp án: p99 = 59 token → **`max_target_length=64`** (32 sẽ cắt 8,1% đáp án).
+- Ghép k=3 đoạn ≈ 631 token (p90 ≈ 1.020), k=5 ≈ 1.033 token (p90 ≈ 1.676). → Với k > 1, mặc định **đọc từng đoạn riêng rồi chọn đáp án có điểm cao nhất**; ghép đoạn (1024 token) chỉ là thí nghiệm phụ.
+- 3 bài không có câu hỏi có nhãn: Edward II của Anh, Đế quốc Đức (train), Đế quốc Nga (test). Đoạn văn của chúng vẫn nằm trong kho, đóng vai trò nhiễu khi truy hồi.
 
 ### Giai đoạn 2 — Retriever (2 ngày)
 - [ ] Tách `HybridRetriever` ra `src/retriever/hybrid.py`, cho phép chọn chế độ `bm25 | dense | hybrid`.
@@ -126,8 +133,8 @@ HMTT/
 
 ### Giai đoạn 4 — Reader ViT5 text-to-text (3–4 ngày, Colab GPU)
 - [ ] `train_seq2seq.py` dùng `Seq2SeqTrainer`; cấu hình đọc từ `configs/reader_vit5.yaml`.
-  - Input: `"<q> {question} </q> <ctx> {passages} </ctx>"`, max 512 token (thử 1024 nếu dùng A100).
-  - Target: đáp án, max 32 token.
+  - Input: `"<q> {question} </q> <ctx> {passage} </ctx>"`, max 512 token, mỗi input **một đoạn** (xem kết quả Giai đoạn 1).
+  - Target: đáp án, max 64 token.
   - Mặc định: lr 3e-5, effective batch 32, 5 epoch, early stopping theo F1 trên dev, bf16, seed cố định.
 - [ ] **R1 — train trên đoạn văn đúng** (cách đơn giản nhất).
 - [ ] **R2 — train trên đoạn văn retriever tìm được** (gold + top-k, có xáo trộn). Mục đích: Reader quen với nhiễu khi chạy thực tế.
@@ -195,7 +202,7 @@ Tổng khoảng 3–4 tuần. Hạn nộp chưa biết, cần điều chỉnh kh
 |---|---|---|
 | Tập test nhỏ (7 bài), kết quả dao động | Cao | Bootstrap CI, nhiều seed, báo cáo thêm trên dev |
 | Ghép k đoạn vượt 512 token | Cao | Cắt mỗi đoạn theo ngân sách token; thử 1024; hoặc đọc từng đoạn rồi chọn đáp án có điểm cao nhất |
-| Lỗi phiên bản `transformers` trên Colab (như dự án cũ) | Trung bình | Ghim phiên bản trong `requirements.txt` và dùng đúng nó trên Colab |
+| Lỗi phiên bản `transformers` trên Colab (như dự án cũ) | **Đã xảy ra** (5.x hỏng tokenizer ViT5) | Đã ghim `transformers==4.57.6`; trên Colab phải `pip install -r requirements.txt` rồi **restart runtime** |
 | Không có GPU mạnh | Trung bình | `vit5-base` + 512 token chạy được trên T4; bỏ E7 |
 | ViT5 bịa đáp án không có trong đoạn văn | Trung bình | Đo tỉ lệ "đáp án có trong đoạn văn", thêm ràng buộc khi sinh, phân tích ở Giai đoạn 6 |
 | Đáp án chuẩn của ViQuAD có lỗi hoặc nhiều cách viết | Thấp–TB | F1 theo token, ghi nhận trong phân tích lỗi |

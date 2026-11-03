@@ -72,6 +72,7 @@ Số liệu trong `splits_report.txt` khớp với README:
 **Hạn chế**
 - Tập test chỉ có **7 bài**. Mỗi bài là một chủ đề lớn, nên kết quả trên test phụ thuộc mạnh vào việc 7 bài đó là bài nào (phương sai cao). Nên báo cáo thêm kết quả theo từng bài hoặc dùng cross-validation theo bài.
 - Có 10.114 câu trả lời được nhưng chỉ **8.126** câu có `answer_span_ok`. Khoảng 2.000 câu (≈20%) bị lệch span; nguyên nhân rất có thể là `normalize_vi` thay đổi ký tự trong context nhưng không cập nhật lại `answer_start`. Cần kiểm tra thêm.
+  > **Đính chính (03/11/2026, Giai đoạn 1):** giả thuyết trên sai. 1.988 câu đó đến từ split `test` chính thức của ViQuAD trên HF, vốn **không có nhãn** (`answers=None`), và bị tính nhầm là "trả lời được". Lệch offset do chuẩn hoá thật ra chỉ có 74 câu. Ngoài ra `plausible_answer` rỗng ở mọi dòng vì code đọc sai tên trường. Đã sửa hết trong `src/data/build_corpus.py`; xem `PLAN.md`, Giai đoạn 1.
 - `first_answer` chỉ lấy đáp án đầu tiên, bỏ qua các đáp án thay thế.
 - README ghi ViQuAD có 184 bài, còn docstring trong code ghi 176. Cần thống nhất một con số.
 

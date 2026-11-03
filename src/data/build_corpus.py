@@ -92,6 +92,25 @@ def first_answer(answers: Any) -> tuple[str, Optional[int]]:
     return txt, start
 
 
+MAX_REALIGN = 20   # ký tự — offset lệch quá mức này thì không tự sửa
+
+
+def _realign_start(context: str, ans_text: str,
+                   ans_start: Optional[int]) -> Optional[int]:
+    """Vị trí xuất hiện của ans_text gần ans_start nhất (lệch <= MAX_REALIGN),
+    hoặc None. Không có ans_start: chỉ nhận khi ans_text xuất hiện đúng 1 lần."""
+    occ, i = [], context.find(ans_text)
+    while i >= 0:
+        occ.append(i)
+        i = context.find(ans_text, i + 1)
+    if not occ:
+        return None
+    if ans_start is None:
+        return occ[0] if len(occ) == 1 else None
+    best = min(occ, key=lambda o: abs(o - ans_start))
+    return best if abs(best - ans_start) <= MAX_REALIGN else None
+
+
 # ----------------------------- Build ----------------------------------------
 
 def build(rows: Iterable[dict], keep_titles: set[str],
@@ -107,7 +126,8 @@ def build(rows: Iterable[dict], keep_titles: set[str],
     title_sizes: dict[str, int] = defaultdict(int)   # title -> số đoạn (để chia cân tải)
     title_is_vn: dict[str, bool] = {}
     stats = {"rows_seen": 0, "rows_kept": 0, "passages": 0,
-             "answerable": 0, "unanswerable": 0, "skipped_not_history": 0}
+             "answerable": 0, "unanswerable": 0, "skipped_not_history": 0,
+             "skipped_unlabeled": 0}
 
     for row in rows:
         stats["rows_seen"] += 1
@@ -142,6 +162,13 @@ def build(rows: Iterable[dict], keep_titles: set[str],
             }
 
         # --- qa pair ---
+        # Split `test` chính thức của ViQuAD trên HF KHÔNG có nhãn: answers=None và
+        # is_impossible luôn False. Đoạn văn vẫn giữ (kho tri thức), nhưng câu hỏi bị
+        # bỏ vì không biết đáp án — trước đây chúng bị tính nhầm là "answerable".
+        if row.get("answers") is None:
+            stats["skipped_unlabeled"] += 1
+            continue
+
         is_imp = bool(row.get("is_impossible", False))
         ans_text, ans_start = first_answer(row.get("answers"))
         # validate answer span nằm đúng trong context (nếu answerable)
@@ -149,13 +176,32 @@ def build(rows: Iterable[dict], keep_titles: set[str],
         if not is_imp and ans_text:
             if ans_start is not None and 0 <= ans_start <= len(context):
                 span_ok = context[ans_start:ans_start + len(ans_text)] == ans_text
-            if not span_ok:                      # fallback: tìm chuỗi con
-                span_ok = ans_text in context
+            if not span_ok:
+                # normalize_vi (gộp khoảng trắng, strip) làm offset gốc lệch vài ký tự
+                # -> chọn lần xuất hiện GẦN offset gốc nhất, chỉ nhận nếu lệch nhỏ.
+                # Lệch xa thường là một lần nhắc KHÁC của cùng cụm từ -> không đoán.
+                fixed = _realign_start(context, ans_text, ans_start)
+                if fixed is not None:
+                    ans_start, span_ok = fixed, True
+
+        # ViQuAD 2.0 lưu đáp án "gần đúng" của câu không trả lời được ở plausible_answers
+        # (cùng dạng với answers) — KHÔNG phải trường "plausible".
+        plausible_text, _ = first_answer(row.get("plausible_answers"))
+        # ưu tiên id gốc của ViQuAD (truy vết được); md5 chỉ là dự phòng.
+        # id ViQuAD chỉ duy nhất TRONG từng split chính thức (train & validation dùng
+        # lại cùng dãy số) -> phải ghép tên split: "train:0013-0001-0001".
+        raw_id = str(row.get("id") or "")
+        src_split = row.get("_viquad_split")
+        if raw_id:
+            qa_id = f"{src_split}:{raw_id}" if src_split else raw_id
+        else:
+            qa_id = "qa_" + hashlib.md5(
+                (title + str(row.get("question", "")) + ans_text).encode()
+            ).hexdigest()[:12]
 
         qa.append({
-            "qa_id": "qa_" + hashlib.md5(
-                (title + str(row.get("question", "")) + ans_text).encode()
-            ).hexdigest()[:12],
+            "qa_id": qa_id,
+            "viquad_split": row.get("_viquad_split"),
             "context_id": cid,
             "title": title,
             "question": normalize_vi(str(row.get("question", ""))),
@@ -163,7 +209,7 @@ def build(rows: Iterable[dict], keep_titles: set[str],
             "answer_start": ans_start,
             "answer_span_ok": span_ok,
             "is_impossible": is_imp,
-            "plausible_answer": normalize_vi(str(row.get("plausible", "") or "")),
+            "plausible_answer": plausible_text,
             "is_vietnam": is_vn,
             "split": None,               # gán sau
         })
@@ -197,6 +243,7 @@ def iter_viquad() -> Iterable[dict]:
     ds = load_dataset("taidng/UIT-ViQuAD2.0")
     for split in ds:
         for row in ds[split]:
+            row["_viquad_split"] = split     # giữ nguồn gốc để truy vết
             yield row
 
 
@@ -231,6 +278,11 @@ def main():
     assert leak == 1, "RÒ RỈ: một đoạn nằm ở nhiều split!"
     title_leak = cdf.groupby("title")["split"].nunique().max()
     assert title_leak == 1, "RÒ RỈ: một bài nằm ở nhiều split!"
+    assert qdf.qa_id.is_unique, "qa_id bị trùng!"
+    assert (qdf.groupby("qa_id")["split"].nunique() == 1).all(), "RÒ RỈ: câu hỏi ở nhiều split!"
+    # câu trả lời được phải có đáp án không rỗng (chặn lại lỗi split test không nhãn)
+    assert (qdf.loc[~qdf.is_impossible, "answer_text"].str.len() > 0).all(), \
+        "Có câu answerable mà answer_text rỗng!"
 
     # ---- báo cáo ----
     lines = []

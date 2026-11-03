@@ -2,7 +2,15 @@
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "data"))
-from build_corpus import build, first_answer, make_context_id
+from build_corpus import build, first_answer, make_context_id, _realign_start
+
+# --- căn lại answer_start bị lệch do chuẩn hoá ---
+_c = "Năm 1954 quân ta thắng. Đến năm 1975 thống nhất."
+assert _realign_start(_c, "1975", _c.index("1975") + 1) == _c.index("1975")   # lệch 1
+assert _realign_start(_c, "năm", _c.index("năm 1975") - 2) == _c.index("năm 1975")  # chọn lần gần nhất
+assert _realign_start(_c, "1975", 0) is None            # lệch xa > MAX_REALIGN: không đoán
+assert _realign_start(_c, "1975", None) == _c.index("1975")   # xuất hiện đúng 1 lần
+assert _realign_start(_c, "Năm 1986", 0) is None       # không xuất hiện
 
 CTX_DBP = ("Chiến thắng Điện Biên Phủ diễn ra năm 1954, kết thúc chín năm kháng "
            "chiến chống thực dân Pháp. Chiến dịch do Đại tướng Võ Nguyên Giáp chỉ "
@@ -22,27 +30,32 @@ mock_rows = [
     {"title": "Chiến dịch Điện Biên Phủ", "context": CTX_DBP,
      "question": "Điện Biên Phủ diễn ra năm nào?",
      "answers": {"text": ["1954"], "answer_start": [start_1954]},
-     "is_impossible": False, "plausible": ""},
+     "is_impossible": False, "plausible_answers": {"text": [], "answer_start": []}},
     {"title": "Chiến dịch Điện Biên Phủ", "context": CTX_DBP,
      "question": "Ai chỉ huy?",
      "answers": {"text": ["Võ Nguyên Giáp"],
                  "answer_start": [CTX_DBP.index("Võ Nguyên Giáp")]},
-     "is_impossible": False, "plausible": ""},
+     "is_impossible": False, "plausible_answers": {"text": [], "answer_start": []}},
     {"title": "Chiến dịch Điện Biên Phủ", "context": CTX_DBP,
      "question": "Có bao nhiêu lính Mỹ tham chiến?",
      "answers": {"text": [], "answer_start": []},
-     "is_impossible": True, "plausible": "5000"},
+     "is_impossible": True, "plausible_answers": {"text": ["5000"], "answer_start": [0]}},
     # Bài LỊCH SỬ thế giới
     {"title": "Đế quốc La Mã", "context": CTX_ROME,
      "question": "Nền cộng hòa La Mã sụp đổ năm nào?",
      "answers": {"text": ["27 trước Công nguyên"],
                  "answer_start": [CTX_ROME.index("27 trước")]},
-     "is_impossible": False, "plausible": ""},
+     "is_impossible": False, "plausible_answers": {"text": [], "answer_start": []}},
+    # Câu KHÔNG CÓ NHÃN (giống split test chính thức trên HF): answers=None
+    # -> bỏ câu hỏi, nhưng đoạn văn vẫn giữ trong corpus
+    {"title": "Đế quốc La Mã", "context": CTX_ROME,
+     "question": "Augustus là ai?", "answers": None,
+     "is_impossible": False, "plausible_answers": None},
     # Bài KHÔNG lịch sử -> phải bị loại
     {"title": "Ngữ pháp tiếng Anh", "context": CTX_ENG,
      "question": "Mấy lớp từ?",
      "answers": {"text": ["bảy"], "answer_start": [CTX_ENG.index("bảy")]},
-     "is_impossible": False, "plausible": ""},
+     "is_impossible": False, "plausible_answers": {"text": [], "answer_start": []}},
 ]
 
 # Giả lập inventory đã rà tay
@@ -55,12 +68,16 @@ print("=== STATS ===")
 for k, v in stats.items():
     print(f"  {k:20s}: {v}")
 
-assert stats["rows_seen"] == 5
+assert stats["rows_seen"] == 6
 assert stats["skipped_not_history"] == 1        # bài tiếng Anh bị loại
 assert stats["rows_kept"] == 4
 assert stats["passages"] == 2                    # DBP khử trùng còn 1 + La Mã 1
 assert stats["answerable"] == 3
 assert stats["unanswerable"] == 1
+assert stats["skipped_unlabeled"] == 1   # câu không nhãn bị bỏ
+assert "Augustus là ai?" not in {q["question"] for q in qa}
+# mọi câu answerable đều có đáp án không rỗng
+assert all(q["answer_text"] for q in qa if not q["is_impossible"])
 
 # --- answer span validate ---
 qa_by_q = {q["question"]: q for q in qa}
