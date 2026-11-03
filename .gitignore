@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Bí mật — KHÔNG BAO GIỜ commit
+.env
+
+# Mô hình & đầu ra lớn (tái tạo được / lưu trên Drive, HF Hub)
+models/
+checkpoints/
+runs/
+wandb/
+data/index*/
+data/predictions/
+legacy/data/index/
+*.pkl
+*.safetensors
+*.bin
+
+# Hệ điều hành / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
