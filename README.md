@@ -12,7 +12,7 @@ Người dùng nhập một câu hỏi lịch sử. Hệ thống tìm đoạn v�
 | 0 | Dọn dẹp, bảo mật, git, `requirements.txt` | ✅ |
 | 1 | Chuẩn hoá dữ liệu QA | ✅ |
 | 2 | Retriever (hybrid BM25 + dense, R@5 dev 93,4%) | ✅ |
-| 3 | Metric & baseline (B0, B2 trên dev; B1 chờ GPU) | 🟡 |
+| 3 | Metric & baseline (B1 XLM-R: HasAns-F1 dev 61,7) | ✅ |
 | 4 | Reader ViT5 | ⬜ |
 | 5 | Thí nghiệm | ⬜ |
 | 6 | Phân tích lỗi & demo | ⬜ |

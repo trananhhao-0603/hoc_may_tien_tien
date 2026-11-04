@@ -174,6 +174,8 @@ Chỉ tính trên câu trả lời được. Cấu hình chọn trên **dev**, k
 
 ## Giai đoạn 3 — Thước đo và các mốc so sánh (baseline)
 
+**Trạng thái:** ✅ xong.
+
 **Mục tiêu:** trước khi train ViT5, cần (1) một **thước đo** chuẩn và đúng cho tiếng Việt, và (2) các **mốc so sánh** để biết kết quả ViT5 là tốt hay chỉ bình thường.
 
 ### 3.1. Thước đo EM và F1 (`src/eval/metrics.py`)
@@ -234,7 +236,7 @@ Chi tiết từng baseline:
   - Lúc dự đoán, so điểm "không có đáp án" với điểm của đoạn chữ tốt nhất. Ngưỡng so sánh được chọn trên dev.
   - Cố ý **không** dùng các checkpoint "vi-mrc" có sẵn, vì chúng có thể đã được train trên chính ViQuAD, kể cả phần mình dùng làm test.
   - Đã kiểm tra cách gán nhãn: 425/429 mảnh khớp đúng đáp án. 4 mảnh lệch là do đáp án gốc của ViQuAD bị cắt giữa từ (vd. "60 máy bay" trong khi văn bản là "160 máy bay").
-  - Đã chạy thử toàn bộ luồng trên CPU. Bản train thật **đang chạy trên Colab GPU** (`notebooks/colab_train_reader.ipynb`).
+  - Đã chạy thử toàn bộ luồng trên CPU, rồi train thật trên Colab GPU T4 (`notebooks/colab_train_reader.ipynb`), 3 epoch.
 - **B2** (`src/reader/infer.py`): file này cũng là công cụ suy luận cho ViT5 ở Giai đoạn 4.
   - Input có dạng `<q> câu hỏi </q> <ctx> đoạn văn </ctx>`.
   - Khi đọc nhiều đoạn, mỗi đoạn sinh một đáp án kèm điểm tin cậy (xác suất trung bình mỗi token). Chọn đáp án có điểm cao nhất trong các đáp án không phải "không có câu trả lời".
@@ -246,12 +248,15 @@ Chi tiết từng baseline:
 | B0 ngẫu nhiên | đoạn đúng | 0.1 | 1.6 | 2.4 | 0.0 |
 | B0 ngẫu nhiên | hybrid top-1 | 0.1 | 1.7 | 2.5 | 0.0 |
 | B2 ViT5 zero-shot | đoạn đúng | 0.0 | 0.4 | 0.6 | 0.0 |
-| B1 XLM-R trích xuất | đoạn đúng | *đang train* | | | |
+| **B1 XLM-R trích xuất** | đoạn đúng | **37.4** | **51.5** | **61.7** | **30.9** |
 
 **Cách đọc:**
 - B0 gần như bằng 0, vì đáp án ViQuAD khá dài (trung vị 8 âm tiết) mà cụm danh từ chọn ngẫu nhiên thì ngắn.
 - B2 còn thấp hơn B0: ViT5 gốc chỉ được pretrain để điền chữ bị che, chưa từng học trả lời câu hỏi, nên chỉ sinh ra ký hiệu rác. Mọi cải thiện sau khi fine-tune đều là công của việc fine-tune.
 - B0 trên hybrid top-1 có 71,9% câu tìm đúng đoạn, khớp với R@1 ở Giai đoạn 2. Đây là một kiểm tra chéo cho thấy công cụ chấm điểm hoạt động đúng.
+- **B1 là đối thủ thật sự của ViT5.** Với câu có đáp án, F1 đạt 61,7 nhưng EM chỉ 40,6. Nghĩa là mô hình thường chỉ đúng vùng chứa đáp án nhưng cắt thừa hoặc thiếu vài chữ, vì đáp án ViQuAD khá dài.
+- **Điểm yếu lớn nhất của B1 là biết từ chối:** chỉ 30,9% câu không trả lời được được từ chối đúng, trong khi 20,5% câu *có* đáp án lại bị từ chối nhầm. Chỉnh ngưỡng chỉ đẩy lỗi từ loại này sang loại kia. Đây là chỗ ViT5 (học sinh trực tiếp câu "không có câu trả lời") cần chứng minh mình tốt hơn (RQ3).
+- Theo loại câu hỏi: "khi nào" dễ nhất (F1 81,1 trên câu có đáp án), "như thế nào" khó nhất (53,9) vì đáp án dài, ranh giới khó xác định. Bài Việt Nam nhỉnh hơn bài thế giới (64,4 so với 60,6).
 
 ---
 

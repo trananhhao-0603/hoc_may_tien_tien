@@ -28,11 +28,16 @@ PRED_DIR = ROOT / "data" / "predictions"
 
 
 def git_commit() -> str:
+    # Trên Colab code đến từ hmtt.zip (không có .git): đọc file COMMIT do git archive ghi vào
+    if not (ROOT / ".git").exists() and (ROOT / "COMMIT").exists():
+        return (ROOT / "COMMIT").read_text(encoding="utf-8").strip() + "-zip"
     try:
         out = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
                              capture_output=True, text=True, timeout=10)
         dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
                                capture_output=True, text=True, timeout=10).stdout.strip()
+        if out.returncode != 0 or not out.stdout.strip():
+            return "unknown"
         return out.stdout.strip() + ("-dirty" if dirty else "")
     except Exception:
         return "unknown"

@@ -287,6 +287,174 @@
     },
     "pred_in_ctx": 99.84951091045899
   },
+  "b1_gold_dev": {
+    "meta": {
+      "commit": "",
+      "time": "2026-11-04 15:44:56",
+      "config": {
+        "model": "xlm-roberta-base",
+        "output_dir": "models/b1_xlmr",
+        "max_length": 384,
+        "doc_stride": 128,
+        "max_answer_length": 100,
+        "n_best": 20,
+        "lr": 3e-05,
+        "epochs": 3,
+        "batch_size": 16,
+        "grad_accum": 2,
+        "warmup_ratio": 0.1,
+        "weight_decay": 0.01,
+        "seed": 42,
+        "bf16": true,
+        "null_threshold": 0.0
+      },
+      "predict_only": null,
+      "split": "dev",
+      "context": "gold",
+      "mode": "hybrid",
+      "k": 1,
+      "tune_threshold": true,
+      "threshold": null,
+      "max_train": null,
+      "max_eval": null,
+      "epochs": null,
+      "run": "b1_gold_dev",
+      "model": "xlm-roberta-base",
+      "checkpoint": "/content/HMTT/models/b1_xlmr",
+      "null_threshold": -0.10359999999999979
+    },
+    "overall": {
+      "n": 1329,
+      "n_has": 892,
+      "n_no": 437,
+      "EM": 37.39653875094056,
+      "F1": 51.54779464529601,
+      "HasAns_EM": 40.582959641255606,
+      "HasAns_F1": 61.66706175291301,
+      "NoAns_acc": 30.892448512585812,
+      "HasAns_abstain": 20.515695067264573
+    },
+    "by_domain": {
+      "VN": {
+        "n": 407,
+        "n_has": 247,
+        "n_no": 160,
+        "EM": 37.59213759213759,
+        "F1": 51.353737491452584,
+        "HasAns_EM": 41.70040485829959,
+        "HasAns_F1": 64.37640145352714,
+        "NoAns_acc": 31.25,
+        "HasAns_abstain": 16.194331983805668
+      },
+      "TG": {
+        "n": 922,
+        "n_has": 645,
+        "n_no": 277,
+        "EM": 37.310195227765725,
+        "F1": 51.63345761884729,
+        "HasAns_EM": 40.15503875968992,
+        "HasAns_F1": 60.62953166601116,
+        "NoAns_acc": 30.685920577617328,
+        "HasAns_abstain": 22.170542635658915
+      }
+    },
+    "by_qtype": {
+      "khi nào": {
+        "n": 134,
+        "n_has": 90,
+        "n_no": 44,
+        "EM": 47.76119402985075,
+        "F1": 58.171022592664386,
+        "HasAns_EM": 65.55555555555556,
+        "HasAns_F1": 81.05463363796697,
+        "NoAns_acc": 11.363636363636363,
+        "HasAns_abstain": 7.777777777777778
+      },
+      "ai": {
+        "n": 159,
+        "n_has": 110,
+        "n_no": 49,
+        "EM": 47.16981132075472,
+        "F1": 53.24448410868959,
+        "HasAns_EM": 57.27272727272727,
+        "HasAns_F1": 66.05339066619678,
+        "NoAns_acc": 24.489795918367346,
+        "HasAns_abstain": 15.454545454545455
+      },
+      "ở đâu": {
+        "n": 100,
+        "n_has": 65,
+        "n_no": 35,
+        "EM": 38.0,
+        "F1": 48.47333763702185,
+        "HasAns_EM": 46.15384615384615,
+        "HasAns_F1": 62.26667328772592,
+        "NoAns_acc": 22.857142857142858,
+        "HasAns_abstain": 23.076923076923077
+      },
+      "bao nhiêu": {
+        "n": 131,
+        "n_has": 86,
+        "n_no": 45,
+        "EM": 35.11450381679389,
+        "F1": 50.242193900393424,
+        "HasAns_EM": 43.02325581395349,
+        "HasAns_F1": 66.066597685483,
+        "NoAns_acc": 20.0,
+        "HasAns_abstain": 12.790697674418604
+      },
+      "vì sao": {
+        "n": 120,
+        "n_has": 77,
+        "n_no": 43,
+        "EM": 30.833333333333332,
+        "F1": 48.537169777564955,
+        "HasAns_EM": 32.467532467532465,
+        "HasAns_F1": 60.057926926075254,
+        "NoAns_acc": 27.906976744186046,
+        "HasAns_abstain": 20.77922077922078
+      },
+      "như thế nào": {
+        "n": 129,
+        "n_has": 92,
+        "n_no": 37,
+        "EM": 26.356589147286822,
+        "F1": 49.2993927477892,
+        "HasAns_EM": 21.73913043478261,
+        "HasAns_F1": 53.90893113548703,
+        "NoAns_acc": 37.83783783783784,
+        "HasAns_abstain": 20.652173913043477
+      },
+      "cái gì": {
+        "n": 514,
+        "n_has": 335,
+        "n_no": 179,
+        "EM": 37.35408560311284,
+        "F1": 51.86084571687319,
+        "HasAns_EM": 35.82089552238806,
+        "HasAns_F1": 58.079028950665155,
+        "NoAns_acc": 40.22346368715084,
+        "HasAns_abstain": 25.671641791044777
+      },
+      "khác": {
+        "n": 42,
+        "n_has": 37,
+        "n_no": 5,
+        "EM": 26.19047619047619,
+        "F1": 47.062171000013755,
+        "HasAns_EM": 21.62162162162162,
+        "HasAns_F1": 45.31381572974534,
+        "NoAns_acc": 60.0,
+        "HasAns_abstain": 32.432432432432435
+      }
+    },
+    "retrieval": {
+      "gold_in_ctx": 100.0,
+      "HasAns_F1_hit": 61.667061752913014,
+      "HasAns_F1_miss": NaN
+    },
+    "pred_in_ctx": 100.0
+  },
   "b2_gold_dev": {
     "meta": {
       "commit": "6b01a5c-dirty",
