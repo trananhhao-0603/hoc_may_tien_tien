@@ -138,14 +138,30 @@ HMTT/
 
 **Xong khi:** có bảng Recall@k cho 3 chế độ × 2 cách tách từ; đã chốt cấu hình. ✅
 
-### Giai đoạn 3 — Metric & baseline (2 ngày)
-- [ ] `metrics.py`: EM và F1 theo token, chuẩn hoá tiếng Việt (NFC, chữ thường, bỏ dấu câu, gộp khoảng trắng; **không** bỏ dấu thanh). Ghi riêng: HasAns-EM/F1, NoAns-accuracy (theo kiểu `squad_v2`).
-- [ ] Unit test cho metric (các trường hợp: "năm 1954" so với "1954", chữ hoa/thường, đáp án rỗng).
-- [ ] **Baseline B0:** chọn ngẫu nhiên một cụm danh từ hoặc năm trong đoạn văn đứng đầu (mốc sàn).
-- [ ] **Baseline B1 — Reader trích xuất:** fine-tune `xlm-roberta-base` theo HF QA tutorial, trên đoạn văn đúng (gold).
-- [ ] **Baseline B2 — ViT5 zero-shot:** `VietAI/vit5-base` chưa fine-tune.
+### Giai đoạn 3 — Metric & baseline (2 ngày) 🟡 (còn B1 cần GPU)
+- [x] `src/eval/metrics.py`: EM và F1 theo âm tiết, chuẩn hoá tiếng Việt (NFC, chữ thường, bỏ dấu câu, gộp khoảng trắng; **không** bỏ dấu thanh). Ghi riêng: HasAns-EM/F1, NoAns-accuracy, tỉ lệ từ chối sai (theo kiểu `squad_v2`).
+  - **Phát sinh:** kho dùng lẫn hai kiểu đặt dấu thanh ("hòa" 605 lần / "hoà" 953 lần, "thủy"/"thuỷ") → chuẩn hoá thêm vị trí dấu thanh (oa/oe/uy cuối âm tiết).
+  - **Phát sinh:** "từ chối" = chuỗi thô rỗng hoặc đúng nhãn `"không có câu trả lời"`. Chuỗi chỉ toàn ký hiệu **không** tính là từ chối, vì nếu tính thì ViT5 zero-shot (sinh `*>+>`) được NoAns-acc 62% và EM 20,4 một cách ảo.
+- [x] Unit test: `tests/test_metrics.py` ("năm 1954" vs "1954" → F1 2/3, hoa/thường, NFC/NFD, vị trí dấu thanh, đáp án rỗng, nhãn từ chối) và `tests/test_evaluate.py`.
+- [x] `src/eval/evaluate_pipeline.py`: nhận một hoặc nhiều file `data/predictions/{run}.jsonl` (định dạng ở `src/eval/predictions.py`), in bảng tổng / VN–TG / loại câu hỏi (`qtype.py`), tỉ lệ đoạn đúng nằm trong các đoạn đã đọc, HasAns-F1 khi tìm đúng/sai, tỉ lệ dự đoán có nguyên văn trong đoạn (chỉ báo "bịa"). `--out` ghi `.md` + `.json`.
+- [x] **Baseline B0** (`src/reader/baseline_random.py`): cụm danh từ (underthesea chunk) hoặc năm ngẫu nhiên trong đoạn top-1; chạy trên cả đoạn đúng và đoạn retriever tìm được.
+- [ ] **Baseline B1 — Reader trích xuất** (`src/reader/train_extractive.py`, `configs/reader_extractive.yaml`): `xlm-roberta-base`, squad_v2 (câu không trả lời được → token `<s>`), ngưỡng null chọn trên dev. Đã kiểm gán nhãn span (425/429 feature khớp; 4 feature lệch do đáp án gốc cắt giữa từ) và chạy thử toàn luồng trên CPU. **Còn: train thật trên Colab** (`notebooks/colab_train_reader.ipynb`).
+- [x] **Baseline B2 — ViT5 zero-shot** (`src/reader/infer.py`, dùng lại ở Giai đoạn 4): `VietAI/vit5-base` chưa fine-tune, input `"<q> … </q> <ctx> … </ctx>"`. CPU ~0,2 s/câu.
 
-**Xong khi:** `evaluate_pipeline.py` nhận một file dự đoán và in ra đủ bảng chỉ số.
+**Kết quả trên dev** (`reports/baselines_dev.md`):
+
+| Run | Đoạn văn | EM | F1 | HasAns-F1 | NoAns-acc |
+|---|---|---|---|---|---|
+| B0 ngẫu nhiên | đúng | 0.1 | 1.6 | 2.4 | 0.0 |
+| B0 ngẫu nhiên | hybrid top-1 | 0.1 | 1.7 | 2.5 | 0.0 |
+| B2 ViT5 zero-shot | đúng | 0.0 | 0.4 | 0.6 | 0.0 |
+| B1 XLM-R trích xuất | đúng | — | — | — | — |
+
+- B0 rất thấp vì đáp án ViQuAD dài (trung vị 8 âm tiết) còn cụm danh từ của underthesea ngắn. Đây chỉ là mốc sàn.
+- ViT5 chưa fine-tune chỉ sinh ra ký hiệu rác (`*>+>`, `ctx>`): mô hình chỉ được pretrain bằng span-corruption nên chưa biết làm QA. Vì vậy so sánh "fine-tune vs zero-shot" (§7) sẽ chênh lệch rất rõ. Mốc so sánh có ý nghĩa thật là B1.
+- B0 trên hybrid top-1: đoạn đúng nằm trong top-1 ở 71,9% câu, khớp R@1 ở Giai đoạn 2.
+
+**Xong khi:** `evaluate_pipeline.py` nhận một file dự đoán và in ra đủ bảng chỉ số. ✅ (còn số liệu B1)
 
 ### Giai đoạn 4 — Reader ViT5 text-to-text (3–4 ngày, Colab GPU)
 - [ ] `train_seq2seq.py` dùng `Seq2SeqTrainer`; cấu hình đọc từ `configs/reader_vit5.yaml`.

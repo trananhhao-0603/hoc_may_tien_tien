@@ -1,0 +1,22 @@
+# Baseline B1 — Reader trích xuất (squad_v2), train trên đoạn văn đúng.
+# KHÔNG dùng checkpoint đã fine-tune trên ViQuAD/MRC tiếng Việt (tránh rò rỉ dev/test).
+model: xlm-roberta-base
+output_dir: models/b1_xlmr
+
+max_length: 384          # token / feature; đoạn dài hơn được cắt trượt
+doc_stride: 128
+max_answer_length: 100   # token; đáp án p99 = 59 token ViT5 (~ dài hơn với XLM-R)
+n_best: 20
+
+lr: 3.0e-5
+epochs: 3
+batch_size: 16           # mỗi GPU
+grad_accum: 2            # effective batch 32
+warmup_ratio: 0.1
+weight_decay: 0.01
+seed: 42
+bf16: true               # tự tắt nếu GPU không hỗ trợ
+
+# Ngưỡng từ chối: trả "" nếu điểm null - điểm span tốt nhất > threshold.
+# --tune_threshold chọn ngưỡng tốt nhất theo F1 trên dev.
+null_threshold: 0.0

@@ -1,0 +1,437 @@
+{
+  "b0_gold_dev": {
+    "meta": {
+      "commit": "6b01a5c-dirty",
+      "time": "2026-11-04 21:30:08",
+      "run": null,
+      "model": "B0-random-NP/year",
+      "split": "dev",
+      "context": "gold",
+      "mode": "hybrid",
+      "seed": 13,
+      "limit": null
+    },
+    "overall": {
+      "n": 1329,
+      "n_has": 892,
+      "n_no": 437,
+      "EM": 0.07524454477050414,
+      "F1": 1.643097030117239,
+      "HasAns_EM": 0.11210762331838565,
+      "HasAns_F1": 2.4480672119123437,
+      "NoAns_acc": 0.0,
+      "HasAns_abstain": 0.0
+    },
+    "by_domain": {
+      "VN": {
+        "n": 407,
+        "n_has": 247,
+        "n_no": 160,
+        "EM": 0.2457002457002457,
+        "F1": 1.7668543955576348,
+        "HasAns_EM": 0.4048582995951417,
+        "HasAns_F1": 2.9113754615059,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "TG": {
+        "n": 922,
+        "n_has": 645,
+        "n_no": 277,
+        "EM": 0.0,
+        "F1": 1.5884666095811852,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 2.2706452930757406,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "by_qtype": {
+      "khi nào": {
+        "n": 134,
+        "n_has": 90,
+        "n_no": 44,
+        "EM": 0.0,
+        "F1": 2.1428840645258553,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 3.1905162738496067,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ai": {
+        "n": 159,
+        "n_has": 110,
+        "n_no": 49,
+        "EM": 0.0,
+        "F1": 2.0986157896900344,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 3.0334537323701407,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ở đâu": {
+        "n": 100,
+        "n_has": 65,
+        "n_no": 35,
+        "EM": 0.0,
+        "F1": 1.4897546897546896,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 2.2919302919302917,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "bao nhiêu": {
+        "n": 131,
+        "n_has": 86,
+        "n_no": 45,
+        "EM": 0.0,
+        "F1": 1.0432569974554706,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.5891472868217054,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "vì sao": {
+        "n": 120,
+        "n_has": 77,
+        "n_no": 43,
+        "EM": 0.0,
+        "F1": 0.8980189436956991,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.3995100421231674,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "như thế nào": {
+        "n": 129,
+        "n_has": 92,
+        "n_no": 37,
+        "EM": 0.0,
+        "F1": 0.8340491159925996,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.1694819126417972,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "cái gì": {
+        "n": 514,
+        "n_has": 335,
+        "n_no": 179,
+        "EM": 0.19455252918287938,
+        "F1": 1.9287035039282496,
+        "HasAns_EM": 0.29850746268656714,
+        "HasAns_F1": 2.9592644806540904,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "khác": {
+        "n": 42,
+        "n_has": 37,
+        "n_no": 5,
+        "EM": 0.0,
+        "F1": 1.6785531416867823,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.9053846473201312,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "retrieval": {
+      "gold_in_ctx": 100.0,
+      "HasAns_F1_hit": 2.4480672119123437,
+      "HasAns_F1_miss": NaN
+    },
+    "pred_in_ctx": 99.84951091045899
+  },
+  "b0_retrieved_dev": {
+    "meta": {
+      "commit": "6b01a5c-dirty",
+      "time": "2026-11-04 21:30:56",
+      "run": null,
+      "model": "B0-random-NP/year",
+      "split": "dev",
+      "context": "retrieved",
+      "mode": "hybrid",
+      "seed": 13,
+      "limit": null
+    },
+    "overall": {
+      "n": 1329,
+      "n_has": 892,
+      "n_no": 437,
+      "EM": 0.07524454477050414,
+      "F1": 1.6919257160121781,
+      "HasAns_EM": 0.11210762331838565,
+      "HasAns_F1": 2.5208175746414625,
+      "NoAns_acc": 0.0,
+      "HasAns_abstain": 0.0
+    },
+    "by_domain": {
+      "VN": {
+        "n": 407,
+        "n_has": 247,
+        "n_no": 160,
+        "EM": 0.2457002457002457,
+        "F1": 2.6589321236408754,
+        "HasAns_EM": 0.4048582995951417,
+        "HasAns_F1": 4.381317304946705,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "TG": {
+        "n": 922,
+        "n_has": 645,
+        "n_no": 277,
+        "EM": 0.0,
+        "F1": 1.2650584623192498,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.808347135284261,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "by_qtype": {
+      "khi nào": {
+        "n": 134,
+        "n_has": 90,
+        "n_no": 44,
+        "EM": 0.0,
+        "F1": 0.9337862184096131,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.3903039251876461,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ai": {
+        "n": 159,
+        "n_has": 110,
+        "n_no": 49,
+        "EM": 0.0,
+        "F1": 1.932332681500273,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 2.79309905780494,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ở đâu": {
+        "n": 100,
+        "n_has": 65,
+        "n_no": 35,
+        "EM": 1.0,
+        "F1": 2.127896613190731,
+        "HasAns_EM": 1.5384615384615385,
+        "HasAns_F1": 3.273687097216509,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "bao nhiêu": {
+        "n": 131,
+        "n_has": 86,
+        "n_no": 45,
+        "EM": 0.0,
+        "F1": 2.148970622253065,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 3.2734319943622268,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "vì sao": {
+        "n": 120,
+        "n_has": 77,
+        "n_no": 43,
+        "EM": 0.0,
+        "F1": 1.0006414374608565,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.5594412012376986,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "như thế nào": {
+        "n": 129,
+        "n_has": 92,
+        "n_no": 37,
+        "EM": 0.0,
+        "F1": 1.0831265315213492,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 1.5187317670245004,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "cái gì": {
+        "n": 514,
+        "n_has": 335,
+        "n_no": 179,
+        "EM": 0.0,
+        "F1": 1.8322089830094495,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 2.811210200796588,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "khác": {
+        "n": 42,
+        "n_has": 37,
+        "n_no": 5,
+        "EM": 0.0,
+        "F1": 2.865250042669397,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 3.252445994381478,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "retrieval": {
+      "gold_in_ctx": 71.8609865470852,
+      "HasAns_F1_hit": 3.040440011861625,
+      "HasAns_F1_miss": 1.1938136612624821
+    },
+    "pred_in_ctx": 99.84951091045899
+  },
+  "b2_gold_dev": {
+    "meta": {
+      "commit": "6b01a5c-dirty",
+      "time": "2026-11-04 21:37:25",
+      "model": "VietAI/vit5-base",
+      "split": "dev",
+      "context": "gold",
+      "mode": "hybrid",
+      "k": 1,
+      "batch_size": 8,
+      "num_beams": 1,
+      "limit": null,
+      "run": "b2_gold_dev",
+      "device": "cpu"
+    },
+    "overall": {
+      "n": 1329,
+      "n_has": 892,
+      "n_no": 437,
+      "EM": 0.0,
+      "F1": 0.36947467880139545,
+      "HasAns_EM": 0.0,
+      "HasAns_F1": 0.5504841346715859,
+      "NoAns_acc": 0.0,
+      "HasAns_abstain": 0.0
+    },
+    "by_domain": {
+      "VN": {
+        "n": 407,
+        "n_has": 247,
+        "n_no": 160,
+        "EM": 0.0,
+        "F1": 0.39007164005817985,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.6427496255209685,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "TG": {
+        "n": 922,
+        "n_has": 645,
+        "n_no": 277,
+        "EM": 0.0,
+        "F1": 0.3603825277910795,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.5151514583308144,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "by_qtype": {
+      "khi nào": {
+        "n": 134,
+        "n_has": 90,
+        "n_no": 44,
+        "EM": 0.0,
+        "F1": 0.30183530507995143,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.4493992320079277,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ai": {
+        "n": 159,
+        "n_has": 110,
+        "n_no": 49,
+        "EM": 0.0,
+        "F1": 0.36946502686323934,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.534044902465955,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "ở đâu": {
+        "n": 100,
+        "n_has": 65,
+        "n_no": 35,
+        "EM": 0.0,
+        "F1": 0.4896584896584896,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.7533207533207533,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "bao nhiêu": {
+        "n": 131,
+        "n_has": 86,
+        "n_no": 45,
+        "EM": 0.0,
+        "F1": 0.30897855325336243,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.4706533776301219,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "vì sao": {
+        "n": 120,
+        "n_has": 77,
+        "n_no": 43,
+        "EM": 0.0,
+        "F1": 0.0,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.0,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "như thế nào": {
+        "n": 129,
+        "n_has": 92,
+        "n_no": 37,
+        "EM": 0.0,
+        "F1": 0.5960556984507002,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.8357737510884817,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "cái gì": {
+        "n": 514,
+        "n_has": 335,
+        "n_no": 179,
+        "EM": 0.0,
+        "F1": 0.42104444424513054,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.6460204308716331,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      },
+      "khác": {
+        "n": 42,
+        "n_has": 37,
+        "n_no": 5,
+        "EM": 0.0,
+        "F1": 0.21645021645021642,
+        "HasAns_EM": 0.0,
+        "HasAns_F1": 0.24570024570024568,
+        "NoAns_acc": 0.0,
+        "HasAns_abstain": 0.0
+      }
+    },
+    "retrieval": {
+      "gold_in_ctx": 100.0,
+      "HasAns_F1_hit": 0.5504841346715859,
+      "HasAns_F1_miss": NaN
+    },
+    "pred_in_ctx": 64.25884123401053
+  }
+}
