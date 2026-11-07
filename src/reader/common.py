@@ -32,17 +32,43 @@ def load_corpus_text() -> dict[str, str]:
     return dict(zip(c.context_id, c.context))
 
 
+def cache_path(mode: str) -> Path:
+    return ROOT / f"data/processed/retrieved_{mode}.parquet"
+
+
+def _from_cache(qa: pd.DataFrame, k: int, mode: str):
+    """Đọc top-k từ cache (src/retriever/cache_retrieval.py); None nếu cache thiếu câu / thiếu k."""
+    p = cache_path(mode)
+    if not p.exists():
+        return None
+    c = pd.read_parquet(p)
+    c = c[c.qa_id.isin(set(qa.qa_id)) & (c["rank"] <= k)]
+    groups = {qid: g.sort_values("rank") for qid, g in c.groupby("qa_id")}
+    if len(groups) < len(qa) or any(len(g) < k for g in groups.values()):
+        return None
+    out = [[{"context_id": r.context_id, "rank": int(r.rank), "score": float(r.score)}
+            for r in groups[qid].itertuples()] for qid in qa.qa_id]
+    return out, float(c.retrieve_ms.mean())
+
+
 def get_contexts(qa: pd.DataFrame, source: str, k: int = 1, mode: str = "hybrid",
-                 batch: int = 256) -> tuple[list[list[dict]], float]:
+                 batch: int = 256, use_cache: bool = True) -> tuple[list[list[dict]], float]:
     """
     source = "gold"      -> mỗi câu một đoạn đúng (score None)
-    source = "retrieved" -> top-k của Retriever (chấm toàn kho)
+    source = "retrieved" -> top-k của Retriever (chấm toàn kho); dùng cache
+                            data/processed/retrieved_{mode}.parquet nếu đủ (khi đó ms là
+                            thời gian đo lúc tạo cache trên máy local)
     Trả về (danh sách contexts theo câu, ms truy hồi trung bình mỗi câu).
     """
     if source == "gold":
         return [[{"context_id": cid, "rank": 1, "score": None}] for cid in qa.context_id], 0.0
     if source != "retrieved":
         raise ValueError(f"source phải là gold | retrieved, nhận {source!r}")
+    if use_cache:
+        cached = _from_cache(qa, k, mode)
+        if cached is not None:
+            print(f"Dùng cache truy hồi {cache_path(mode).name} (top-{k})")
+            return cached
 
     from hybrid import Retriever
     r = Retriever.load(str(INDEX_DIR))

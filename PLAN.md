@@ -168,14 +168,17 @@ HMTT/
 **Xong khi:** `evaluate_pipeline.py` nhận một file dự đoán và in ra đủ bảng chỉ số. ✅
 
 ### Giai đoạn 4 — Reader ViT5 text-to-text (3–4 ngày, Colab GPU)
-- [ ] `train_seq2seq.py` dùng `Seq2SeqTrainer`; cấu hình đọc từ `configs/reader_vit5.yaml`.
-  - Input: `"<q> {question} </q> <ctx> {passage} </ctx>"`, max 512 token, mỗi input **một đoạn** (xem kết quả Giai đoạn 1).
-  - Target: đáp án, max 64 token.
-  - Mặc định: lr 3e-5, effective batch 32, 5 epoch, early stopping theo F1 trên dev, bf16, seed cố định.
-- [ ] **R1 — train trên đoạn văn đúng** (cách đơn giản nhất).
-- [ ] **R2 — train trên đoạn văn retriever tìm được** (gold + top-k, có xáo trộn). Mục đích: Reader quen với nhiễu khi chạy thực tế.
-- [ ] `infer.py`: chạy toàn hệ thống (retrieve → read), lưu `data/predictions/{run}.jsonl` gồm câu hỏi, đoạn văn tìm được, dự đoán, đáp án chuẩn, độ trễ.
-- [ ] Lưu checkpoint tốt nhất lên Drive; ghi lại cấu hình và commit hash vào mỗi lần chạy.
+- [x] `src/reader/train_seq2seq.py` dùng `Seq2SeqTrainer`; cấu hình đọc từ `configs/reader_vit5.yaml`. Unit test tạo mẫu: `tests/test_seq2seq_data.py`. Đã chạy thử toàn luồng trên CPU (R1 và R2, 32 mẫu).
+  - Input: `format_input()` của `infer.py` = `"<q> {question} </q> <ctx> {passage} </ctx>"`, max 512 token, mỗi input **một đoạn**.
+  - Target: đáp án, max 64 token; câu không trả lời được → `"không có câu trả lời"`.
+  - Mặc định: effective batch 32 (8 × 4), 5 epoch, early stopping (patience 2) theo F1 dev **trên đoạn đúng** (sinh greedy), bf16 nếu GPU hỗ trợ, nếu không thì fp16; seed 42.
+  - **Phát sinh — lr 1e-4 thay vì 3e-5:** 3e-5 là mức của encoder kiểu BERT; T5/ViT5 với AdamW thường cần 1e-4 – 3e-4. Nếu F1 dev vẫn tăng ở epoch cuối thì thử 3e-4 (chọn trên dev).
+  - **Phát sinh — fp16 trên T4:** T5 + fp16 có thể ra loss NaN. Script tự dừng khi gặp NaN và nhắc chạy lại với `--no_fp16`.
+- [ ] **R1 — train trên đoạn văn đúng**: 9.394 mẫu, 32,4% target là từ chối.
+- [ ] **R2 — đoạn đúng + đoạn nhiễu của retriever**: mỗi câu trả lời được thêm 1 đoạn lấy ngẫu nhiên trong top-5 hybrid (bỏ đoạn đúng). Đoạn nhiễu → target từ chối; nếu đoạn nhiễu chứa nguyên văn đáp án thì giữ đáp án (183 mẫu). Tổng 15.741 mẫu, **58,5% target là từ chối** → cần xem R2 có từ chối nhầm nhiều hơn R1 trên đoạn đúng không. Trainer tự xáo trộn mẫu.
+  - **Phát sinh — cache truy hồi:** `data/index_qa/` không nằm trong git nên không có trên Colab → `src/retriever/cache_retrieval.py` tính sẵn top-20 hybrid cho train + dev vào `data/processed/retrieved_hybrid.parquet` (1 MB, commit được; kiểm lại R@5 dev 93,4 / train 88,0 khớp Giai đoạn 2). `get_contexts()` dùng cache nếu đủ; độ trễ truy hồi lấy theo số đo khi tạo cache. Test không cache.
+- [x] `infer.py`: chạy toàn hệ thống (retrieve → read), lưu `data/predictions/{run}.jsonl` gồm câu hỏi, đoạn văn tìm được, dự đoán, đáp án chuẩn, độ trễ (có từ Giai đoạn 3).
+- [x] Model tốt nhất lưu ở `models/{r1,r2}_vit5` kèm `train_config.json` (cấu hình, commit, số mẫu, lịch sử F1 dev theo epoch); notebook `notebooks/colab_train_vit5.ipynb` chép lên Drive.
 
 **Xong khi:** R1 và R2 có kết quả EM/F1 trên dev; checkpoint tải lại và chạy suy luận được.
 

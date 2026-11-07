@@ -1,0 +1,34 @@
+# Reader ViT5 text-to-text (Giai đoạn 4). Dùng cho cả R1 và R2; R2 bật bằng --data r2.
+# Input/target định dạng bằng format_input() trong src/reader/infer.py (dùng chung lúc suy luận).
+model: VietAI/vit5-base
+output_dir: models/r1_vit5      # --data r2 -> models/r2_vit5 (nếu không truyền --output_dir)
+
+max_source_length: 512   # Giai đoạn 1: input 1 đoạn p99 = 516 token (cắt 1,0%)
+max_target_length: 64    # đáp án p99 = 59 token
+
+# Tối ưu. PLAN ghi lr 3e-5 (mức của encoder kiểu BERT); T5/ViT5 với AdamW thường cần
+# lr cao hơn (1e-4 – 3e-4) -> mặc định 1e-4. Nếu dev F1 còn tăng ở epoch cuối thì thử 3e-4.
+lr: 1.0e-4
+epochs: 5
+batch_size: 8            # mỗi GPU (T4 16GB, 512 token)
+grad_accum: 4            # effective batch 32
+warmup_ratio: 0.05
+weight_decay: 0.01
+label_smoothing: 0.0
+seed: 42
+early_stopping_patience: 2   # dừng nếu F1 dev (đoạn đúng) không tăng sau 2 epoch
+bf16: true               # dùng bf16 nếu GPU hỗ trợ (L4/A100); T4 không có -> fp16
+fp16: true               # chỉ dùng khi không có bf16. T5 + fp16 có thể ra NaN: script tự dừng
+                         # khi loss NaN, chạy lại với --no_fp16 (fp32, chậm hơn ~2 lần)
+
+# Đánh giá mỗi epoch: sinh greedy trên dev, đoạn đúng (chỉ để chọn checkpoint / early stopping).
+eval_batch_size: 32
+eval_num_beams: 1
+
+# R2: thêm đoạn nhiễu do retriever tìm được (data/processed/retrieved_hybrid.parquet).
+r2:
+  mode: hybrid
+  neg_top_k: 5             # lấy đoạn nhiễu trong top-5 (bỏ đoạn đúng)
+  neg_per_question: 1      # số đoạn nhiễu mỗi câu
+  neg_for_impossible: false  # câu không trả lời được đã có nhãn từ chối ở đoạn đúng -> không thêm
+  # Đoạn nhiễu có chứa nguyên văn đáp án -> giữ đáp án làm target (không ép từ chối).
