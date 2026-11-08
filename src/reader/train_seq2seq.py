@@ -129,8 +129,17 @@ def main():
 
     golds = [([] if q.is_impossible else [q.answer_text], bool(q.is_impossible))
              for q in dev.itertuples()]
+    dev_labels = [list(x) for x in ds_dev["labels"]]
+
+    def strip_pad(row) -> list[int]:
+        return [int(t) for t in row if t >= 0 and t != tok.pad_token_id]
 
     def compute_metrics(ev):
+        # Chốt chặn: dự đoán phải cùng thứ tự với golds (lỗi cũ: group_by_length xáo cả dev).
+        labels = [strip_pad(r) for r in ev.label_ids]
+        bad = sum(a != strip_pad(b) for a, b in zip(labels, dev_labels))
+        if len(labels) != len(dev_labels) or bad:
+            raise RuntimeError(f"Thứ tự dev bị xáo: {bad}/{len(labels)} nhãn không khớp")
         preds = ev.predictions[0] if isinstance(ev.predictions, tuple) else ev.predictions
         preds = np.where(preds < 0, tok.pad_token_id, preds)
         texts = [t.strip() for t in tok.batch_decode(preds, skip_special_tokens=True)]
@@ -162,7 +171,14 @@ def main():
         load_best_model_at_end=True, metric_for_best_model="f1", greater_is_better=True,
         predict_with_generate=True, generation_max_length=cfg["max_target_length"],
         generation_num_beams=cfg["eval_num_beams"], logging_steps=50, report_to=[])
-    trainer = Seq2SeqTrainer(
+    class Trainer(Seq2SeqTrainer):
+        # group_by_length chỉ áp cho train; transformers 4.57 áp cả cho eval (LengthGroupedSampler
+        # có ngẫu nhiên) -> dự đoán lệch thứ tự golds, F1 dev vô nghĩa. Dev luôn đi tuần tự.
+        def _get_eval_sampler(self, eval_dataset):
+            from torch.utils.data import SequentialSampler
+            return SequentialSampler(eval_dataset)
+
+    trainer = Trainer(
         model=model, args=targs, train_dataset=ds_train, eval_dataset=ds_dev,
         data_collator=DataCollatorForSeq2Seq(tok, model=model), processing_class=tok,
         compute_metrics=compute_metrics,
