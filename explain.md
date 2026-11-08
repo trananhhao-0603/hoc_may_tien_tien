@@ -14,9 +14,10 @@
 4. [Giai đoạn 2 — Retriever: tìm đoạn văn liên quan](#giai-đoạn-2--retriever-tìm-đoạn-văn-liên-quan)
 5. [Giai đoạn 3 — Thước đo và các mốc so sánh (baseline)](#giai-đoạn-3--thước-đo-và-các-mốc-so-sánh-baseline)
 6. [Giai đoạn 4 — Reader ViT5: dạy mô hình sinh câu trả lời](#giai-đoạn-4--reader-vit5-dạy-mô-hình-sinh-câu-trả-lời)
-7. [Các giai đoạn còn lại](#các-giai-đoạn-còn-lại)
-8. [Các nguyên tắc xuyên suốt](#các-nguyên-tắc-xuyên-suốt)
-9. [Bảng thuật ngữ](#bảng-thuật-ngữ)
+7. [Giai đoạn 5 — Thí nghiệm](#giai-đoạn-5--thí-nghiệm)
+8. [Các giai đoạn còn lại](#các-giai-đoạn-còn-lại)
+9. [Các nguyên tắc xuyên suốt](#các-nguyên-tắc-xuyên-suốt)
+10. [Bảng thuật ngữ](#bảng-thuật-ngữ)
 
 ---
 
@@ -311,11 +312,34 @@ R1 được chạy lại trên Colab. R2 chạy giữa chừng thì Colab hết 
 
 ---
 
+## Giai đoạn 5 — Thí nghiệm
+
+Mọi lựa chọn (số epoch, ngưỡng, số đoạn k) đều làm trên **dev**. Tập **test** chỉ chạy đúng một lần, ở cuối. Toàn bộ chạy trên GPU của máy (RTX 3060) bằng `scripts/gd5_pipeline.py`, khoảng 5,5 giờ. Sau đó `scripts/gd5_report.py` tổng hợp thành bảng `reports/gd5_results.md`.
+
+### 5.1. Train lâu hơn thì tốt hơn
+Ở GĐ4, điểm vẫn còn tăng ở epoch cuối, nên thử hai cách. Tăng tốc độ học lên 3e-4 thì điểm kém đi (F1 46,9). Giữ tốc độ học 1e-4 nhưng train 8 epoch thì điểm tăng (F1 dev 55,9 → 57,5). Model 8 epoch này là "R2 chính".
+
+### 5.2. Ngưỡng từ chối: chỉnh được nhưng không làm hệ thống giỏi hơn
+Mỗi khi mô hình định nói "không có câu trả lời", ta bắt nó sinh thêm một đáp án thay thế. Sau đó so điểm của hai lựa chọn: chỉ từ chối khi điểm từ chối cao hơn điểm đáp án thay thế một khoảng δ. δ được chọn trên dev. Kết quả trên test: mô hình từ chối đúng nhiều hơn (+2 điểm NoAns) nhưng cũng từ chối nhầm nhiều hơn, nên tổng F1 không đổi. Vì vậy ngưỡng chỉ là núm để chọn giữa "thận trọng" và "mạnh dạn", không phải một cải tiến.
+
+### 5.3. Các câu hỏi nghiên cứu
+- **E1 (trích xuất hay sinh):** ViT5 R2 hơn XLM-R B1 trên dev (F1 57,5 so với 51,5). Lợi thế chủ yếu nằm ở khả năng từ chối (NoAns 54% so với 31%).
+- **E2 (retriever nào, đọc bao nhiêu đoạn):** BM25 và hybrid gần bằng nhau, dense kém hẳn. Đọc 3–5 đoạn tốt hơn đọc 1 đoạn khoảng 2–3 F1.
+- **E3 (lỗi do tìm hay do đọc):** khi retriever tìm đúng đoạn (90% số câu), mô hình đọc gần như tốt bằng khi được đưa sẵn đoạn đúng. Khi tìm sai, gần như chắc chắn trả lời sai (HasAns-F1 khoảng 4). Từ "đưa sẵn đoạn đúng" sang "tự tìm" mất khoảng 5 F1.
+- **E4 (có cần câu không trả lời được khi train):** rất cần. Bỏ chúng thì mô hình gần như không biết từ chối (NoAns 55% → 30%) và tổng F1 mất 5,3 điểm.
+- **E5 (thêm dữ liệu ngoài lịch sử):** thêm 10 nghìn câu ViQuAD về các chủ đề khác giúp tăng F1 test thêm 2,9 khi đọc đoạn đúng, và 1,6 khi chạy toàn hệ thống. Cả lịch sử Việt Nam lẫn thế giới đều tăng. Đây là **hệ thống tốt nhất: F1 test 53,4** (hybrid top-5).
+- **E6 (câu nào khó):** lịch sử Việt Nam dễ hơn lịch sử thế giới. Câu "như thế nào" khó nhất, câu "khi nào" và "ai" dễ nhất.
+- **Độ ổn định:** chạy lại với 3 seed, F1 test chỉ lệch khoảng ±0,5, nên kết quả đáng tin.
+
+### 5.4. So với mục tiêu
+Đạt được retriever (90% câu có đoạn đúng trong top-5) và tỉ lệ từ chối đúng khi đọc đoạn đúng (61%). Chưa đạt toàn hệ thống F1 ≥ 55 (đang 53,4) và HasAns-F1 ≥ 70 (đang khoảng 60).
+
+---
+
 ## Các giai đoạn còn lại
 
 | Giai đoạn | Việc chính | Kết quả mong đợi |
 |---|---|---|
-| **5 — Thí nghiệm** | E1–E6 trả lời RQ1–RQ4 (xem PLAN §5). Chạy 3 seed, bootstrap khoảng tin cậy 95%. **Test chỉ chạy một lần** cho cấu hình cuối. | Toàn hệ thống F1 ≥ 55, NoAns-acc ≥ 60% |
 | **6 — Phân tích lỗi & demo** | Phân loại 100 câu sai (tìm sai / đọc sai / đáp án chuẩn có vấn đề / khác cách viết / bịa). Demo Gradio. Đo thời gian chạy. | |
 | **7 — Báo cáo** | Bảng và biểu đồ E1–E6, báo cáo cuối kỳ, README hướng dẫn tái lập kết quả. | |
 

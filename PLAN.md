@@ -200,7 +200,7 @@ HMTT/
 
 **Xong khi:** R1 và R2 có kết quả EM/F1 trên dev; checkpoint tải lại và chạy suy luận được.
 
-### Giai đoạn 5 — Thí nghiệm (3–4 ngày)
+### Giai đoạn 5 — Thí nghiệm (3–4 ngày) ✅ (09/11/2026)
 Mọi lựa chọn đều làm trên **dev**. **Test chỉ chạy một lần** cho các cấu hình cuối cùng.
 
 | ID | Thí nghiệm | Trả lời RQ |
@@ -213,8 +213,29 @@ Mọi lựa chọn đều làm trên **dev**. **Test chỉ chạy một lần** 
 | E6 | Tách kết quả theo VN / TG, theo loại câu hỏi (khi nào / ai / ở đâu / vì sao) | RQ4 |
 | E7 (tuỳ chọn) | `vit5-base` vs `vit5-large` | — |
 
-- [ ] Chạy 3 seed cho cấu hình chính, báo cáo trung bình ± độ lệch chuẩn.
-- [ ] Bootstrap khoảng tin cậy 95% cho EM/F1 trên test (test chỉ có khoảng 1.358 câu, 7 bài).
+- [x] Chạy 3 seed cho cấu hình chính, báo cáo trung bình ± độ lệch chuẩn.
+- [x] Bootstrap khoảng tin cậy 95% cho EM/F1 trên test (test có 1.286 câu).
+
+**Đã làm** (commit code `ce83d68`, chạy hết trên GPU local bằng `scripts/gd5_pipeline.py`, sau đó tổng hợp bằng `scripts/gd5_report.py`). Kết quả: `reports/gd5_results.md`, kết luận: `reports/gd5_summary.md`.
+- Dò tham số R2: lr 1e-4 với 8 epoch là tốt nhất (F1 dev 57,5). lr 3e-4 kém hơn (46,9). Model chính: `models/r2_lr1e-4_e8`.
+- Ngưỡng từ chối δ chọn trên dev (`tune_refusal.py`). Trên test, ngưỡng chỉ đổi HasAns lấy NoAns, tổng F1 không tăng, nên mặc định dùng greedy.
+- E4 (`models/r2_noimp`), E5 (`models/r2_ood`, thêm 10k câu ViQuAD ngoài miền) và 2 seed (`r2_s13`, `r2_s7`) đều đã chạy.
+- B1 và R1 chưa chấm test, vì checkpoint chỉ có trên Drive (cần chạy trên Colab nếu muốn đưa vào bảng test).
+
+| Test (1.286 câu), greedy | EM | F1 | HasAns-F1 | NoAns-acc |
+|---|---|---|---|---|
+| R2 chính, đoạn đúng | 40,4 | 57,4 [54,9; 59,8] | 58,3 | 55,4 |
+| R2 chính, hybrid top-5 | 36,3 | 51,8 [49,3; 54,3] | 51,9 | 51,6 |
+| R2 + ViQuAD (E5), đoạn đúng | 44,6 | 60,3 | 60,1 | 60,7 |
+| **R2 + ViQuAD (E5), hybrid top-5** | **39,4** | **53,4** | 52,2 | 55,9 |
+| R2 bỏ câu không trả lời được (E4), đoạn đúng | 33,8 | 51,2 | 60,9 | 29,6 |
+
+- **Mục tiêu §7:**
+  - Toàn hệ thống F1 test 53,4 < 55: chưa đạt.
+  - HasAns-F1 khoảng 60 < 70: chưa đạt.
+  - NoAns ≥ 60%: chỉ đạt khi đọc đoạn đúng (60,7).
+  - Retriever R@5 test: đoạn đúng nằm trong top-5 hybrid 90,2% ≥ 80%: đạt.
+
 
 ### Giai đoạn 6 — Phân tích lỗi & demo (2 ngày)
 - [ ] Lấy ngẫu nhiên 100 câu trả lời sai, phân loại lỗi: tìm sai đoạn / đọc sai / đáp án chuẩn có vấn đề / đúng nhưng khác cách viết / bịa.
