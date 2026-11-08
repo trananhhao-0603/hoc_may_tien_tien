@@ -207,6 +207,7 @@ Mọi lựa chọn đều làm trên **dev**. **Test chỉ chạy một lần** 
 - [ ] `reports/results.md`: các bảng E1–E6 và biểu đồ (Recall@k, F1 theo k, theo miền).
 - [ ] Viết báo cáo theo mục: Giới thiệu, Liên quan (ViQuAD, DPR/RAG, T5/ViT5), Dữ liệu, Phương pháp, Thí nghiệm, Phân tích lỗi, Hạn chế, Kết luận.
 - [ ] README mới: cài đặt, tái lập từng bảng kết quả bằng một lệnh.
+- [ ] **Cập nhật báo cáo PDF và slide trong `baocao/`** (`10-250201078-240104052-2502010243-2502010484-250201058.pdf` / `.pptx`). Đây là **bản cũ**, làm trước khi có dự án mới. Chỉ làm **sau khi xong hết** Giai đoạn 4–6. Đi lần lượt từng phần (mục của báo cáo, slide tương ứng), thay nội dung cũ bằng phương pháp và kết quả thực tế: dữ liệu và cách chia (GĐ1), retriever hybrid và Recall@k (GĐ2), metric và baseline B0/B1/B2 (GĐ3), ViT5 R1/R2 (GĐ4), E1–E6 trên test (GĐ5), phân tích lỗi và demo (GĐ6). Mọi số liệu lấy từ `reports/`, không chép tay từ hội thoại. PDF không sửa trực tiếp được: cần file nguồn (Word/LaTeX) của báo cáo, nếu không có thì soạn lại bản mới theo đúng cấu trúc cũ.
 
 ---
 
@@ -255,7 +256,7 @@ Tổng khoảng 3–4 tuần. Hạn nộp chưa biết, cần điều chỉnh kh
 3. Checkpoint ViT5 Reader tốt nhất (lưu trên Drive/HF Hub, không đưa vào git).
 4. File dự đoán + `reports/results.md` + phân tích lỗi.
 5. Demo Gradio.
-6. Báo cáo cuối kỳ.
+6. Báo cáo cuối kỳ (PDF) và slide trình bày (PPTX) trong `baocao/`, cập nhật theo kết quả thực tế.
 
 ---
 
