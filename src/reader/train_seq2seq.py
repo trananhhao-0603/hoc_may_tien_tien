@@ -5,6 +5,8 @@ Giai đoạn 4: fine-tune Reader ViT5 text-to-text (Seq2SeqTrainer). Cần GPU (
     python src/reader/train_seq2seq.py --data r1
   R2 — đoạn đúng + đoạn nhiễu retriever tìm được (đọc data/processed/retrieved_hybrid.parquet):
     python src/reader/train_seq2seq.py --data r2
+  Giai đoạn 5: --seed N (nhiều seed), --no_impossible (E4: bỏ câu không trả lời được khỏi train),
+  --ood N (E5: thêm N câu ViQuAD ngoài miền lịch sử, đoạn đúng, từ cache HF taidng/UIT-ViQuAD2.0).
   Chạy thử trên CPU:
     python src/reader/train_seq2seq.py --data r2 --max_train 32 --max_eval 16 --epochs 1 --no_fp16
 
@@ -66,6 +68,26 @@ def build_examples(qa: pd.DataFrame, text: dict[str, str], retrieved: pd.DataFra
     return df
 
 
+def ood_examples(n: int, exclude_titles: set[str], seed: int) -> pd.DataFrame:
+    """E5: n câu ViQuAD 2.0 (train+validation) thuộc bài KHÔNG có trong dữ liệu lịch sử."""
+    import ast
+    from datasets import concatenate_datasets, load_dataset
+    d = load_dataset("taidng/UIT-ViQuAD2.0")
+    df = concatenate_datasets([d["train"], d["validation"]]).to_pandas()
+    df = df[~df.title.isin(exclude_titles)]
+    df = df.sample(min(n, len(df)), random_state=seed)
+
+    def tgt(r):
+        if str(r.is_impossible) == "True":
+            return NO_ANSWER
+        a = r.answers if isinstance(r.answers, dict) else ast.literal_eval(r.answers)
+        return list(a["text"])[0]
+    return pd.DataFrame({"qa_id": "ood_" + df.id.astype(str), "context_id": None,
+                         "question": df.question, "target": [tgt(r) for r in df.itertuples()],
+                         "kind": "ood",
+                         "source": [format_input(q, c) for q, c in zip(df.question, df.context)]})
+
+
 def tokenize(df: pd.DataFrame, tok, cfg):
     enc = tok(list(df.source), max_length=cfg["max_source_length"], truncation=True)
     enc["labels"] = tok(text_target=list(df.target), max_length=cfg["max_target_length"],
@@ -83,12 +105,15 @@ def main():
     ap.add_argument("--max_eval", type=int, default=None)
     ap.add_argument("--epochs", type=float, default=None)
     ap.add_argument("--lr", type=float, default=None)
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--no_impossible", action="store_true", help="E4: bỏ câu is_impossible khỏi train")
+    ap.add_argument("--ood", type=int, default=0, help="E5: thêm N câu ViQuAD ngoài miền")
     ap.add_argument("--no_fp16", action="store_true", help="tắt fp16 (khi loss NaN trên T4)")
     ap.add_argument("--resume", action="store_true", help="train tiếp từ checkpoint cuối")
     args = ap.parse_args()
 
     cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    for key in ("epochs", "lr"):
+    for key in ("epochs", "lr", "seed"):
         if getattr(args, key) is not None:
             cfg[key] = getattr(args, key)
     out_dir = Path(args.output_dir or ROOT / cfg["output_dir"].replace("r1_", f"{args.data}_"))
@@ -105,6 +130,8 @@ def main():
 
     # --- dữ liệu train / dev
     tr = load_questions("train", args.max_train, seed=cfg["seed"])
+    if args.no_impossible:
+        tr = tr[~tr.is_impossible].reset_index(drop=True)
     retrieved = None
     if args.data == "r2":
         p = cache_path(cfg["r2"]["mode"])
@@ -112,6 +139,10 @@ def main():
             raise SystemExit(f"Thiếu {p} — chạy src/retriever/cache_retrieval.py trên máy có index")
         retrieved = pd.read_parquet(p)
     train_df = build_examples(tr, text, retrieved, cfg.get("r2"), seed=cfg["seed"])
+    if args.ood:
+        titles = set(pd.read_parquet(ROOT / "data/processed/qa_pairs.parquet").title)
+        train_df = pd.concat([train_df, ood_examples(args.ood, titles, cfg["seed"])],
+                              ignore_index=True)
     dev = load_questions("dev", args.max_eval, seed=cfg["seed"])
     dev_df = build_examples(dev, text)
     kinds = train_df.kind.value_counts().to_dict()
@@ -190,7 +221,7 @@ def main():
     trainer.save_model(str(out_dir))
     tok.save_pretrained(out_dir)
     hist = [h for h in trainer.state.log_history if "eval_f1" in h]
-    info = {"data": args.data, "commit": git_commit(), "config": cfg,
+    info = {"data": args.data, "no_impossible": args.no_impossible, "ood": args.ood, "commit": git_commit(), "config": cfg,
             "n_train_questions": len(tr), "n_train_examples": len(train_df), "kinds": kinds,
             "n_target_refuse": n_refuse, "n_dev": len(dev), "device": "cuda" if cuda else "cpu",
             "bf16": bf16, "fp16": fp16, "best_checkpoint": trainer.state.best_model_checkpoint,
