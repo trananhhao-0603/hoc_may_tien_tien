@@ -1,6 +1,6 @@
 # Giải thích quá trình làm đề tài — Hệ hỏi đáp Lịch sử tiếng Việt
 
-> Tài liệu này kể lại **từng bước đã làm, làm để làm gì, và vì sao chọn cách đó**, từ lúc nhận dự án cũ đến hiện tại (04/11/2026).
+> Tài liệu này kể lại **từng bước đã làm, làm để làm gì, và vì sao chọn cách đó**, từ lúc nhận dự án cũ đến hiện tại (08/11/2026).
 > Kế hoạch đầy đủ nằm trong [`PLAN.md`](PLAN.md). Số liệu chi tiết nằm trong `reports/`.
 
 ---
@@ -13,9 +13,10 @@
 3. [Giai đoạn 1 — Làm sạch dữ liệu hỏi đáp](#giai-đoạn-1--làm-sạch-dữ-liệu-hỏi-đáp)
 4. [Giai đoạn 2 — Retriever: tìm đoạn văn liên quan](#giai-đoạn-2--retriever-tìm-đoạn-văn-liên-quan)
 5. [Giai đoạn 3 — Thước đo và các mốc so sánh (baseline)](#giai-đoạn-3--thước-đo-và-các-mốc-so-sánh-baseline)
-6. [Các giai đoạn còn lại](#các-giai-đoạn-còn-lại)
-7. [Các nguyên tắc xuyên suốt](#các-nguyên-tắc-xuyên-suốt)
-8. [Bảng thuật ngữ](#bảng-thuật-ngữ)
+6. [Giai đoạn 4 — Reader ViT5: dạy mô hình sinh câu trả lời](#giai-đoạn-4--reader-vit5-dạy-mô-hình-sinh-câu-trả-lời)
+7. [Các giai đoạn còn lại](#các-giai-đoạn-còn-lại)
+8. [Các nguyên tắc xuyên suốt](#các-nguyên-tắc-xuyên-suốt)
+9. [Bảng thuật ngữ](#bảng-thuật-ngữ)
 
 ---
 
@@ -260,11 +261,60 @@ Chi tiết từng baseline:
 
 ---
 
+## Giai đoạn 4 — Reader ViT5: dạy mô hình sinh câu trả lời
+
+Đây là phần chính của đề tài. Mô hình ViT5 (`VietAI/vit5-base`) được huấn luyện để **viết ra** câu trả lời, thay vì chọn một đoạn chữ có sẵn như B1. Ta muốn biết cách này có tốt hơn B1 không, đặc biệt ở khả năng từ chối.
+
+### 4.1. Mô hình học cái gì
+
+Mỗi mẫu huấn luyện là một cặp (đầu vào → đầu ra mong muốn):
+- **Đầu vào:** `"<q> câu hỏi </q> <ctx> đoạn văn </ctx>"`, tối đa 512 token. Chỉ 1,6–2% mẫu bị cắt bớt vì quá dài.
+- **Đầu ra:** chính văn bản đáp án, hoặc câu `"không có câu trả lời"` nếu đoạn văn không chứa đáp án.
+
+Có hai cách tạo dữ liệu huấn luyện:
+- **R1 — chỉ dùng đoạn đúng:** mỗi câu hỏi đi kèm đoạn văn thật sự chứa đáp án. Có 9.394 mẫu, trong đó 32,4% có đáp án là "không có câu trả lời" (vì ViQuAD 2.0 cố ý có những câu hỏi đánh lừa).
+- **R2 — thêm đoạn nhiễu:** ngoài các mẫu của R1, với mỗi câu trả lời được ta lấy thêm một đoạn **sai** do retriever tìm ra (chọn ngẫu nhiên trong top-5) và dạy mô hình trả lời "không có câu trả lời" với đoạn đó. Ý tưởng: khi chạy thật, Reader phải đọc cả những đoạn retriever tìm nhầm, nên cần học cách nhận ra "đoạn này không nói về câu hỏi". Có tổng 15.741 mẫu; 183 đoạn "nhiễu" hoá ra vẫn chứa nguyên văn đáp án nên giữ đáp án.
+
+Khi chạy với 3 đoạn retriever tìm được, mô hình đọc **từng đoạn riêng**. Hàm `pick()` lấy câu trả lời có điểm tin cậy cao nhất (log-prob trung bình mỗi token) trong số các câu **không phải từ chối**. Chỉ khi cả 3 đoạn đều cho "không có câu trả lời" thì hệ thống mới từ chối.
+
+Cài đặt huấn luyện: learning rate 1e-4 (mức thường dùng cho T5, cao hơn mức 3e-5 của B1), batch hiệu dụng 32, tối đa 5 epoch. Sau mỗi epoch, mô hình được chấm F1 trên dev và checkpoint tốt nhất được giữ lại.
+
+### 4.2. Sự cố: lần chạy đầu cho điểm vô nghĩa
+
+Lần chạy đầu (07/11) cho F1 dev chỉ khoảng 15–20, với HasAns-F1 khoảng 1%. Nhưng loss vẫn giảm đều, và tỉ lệ từ chối gần như bằng nhau giữa câu có đáp án và câu không có đáp án. Đây là dấu hiệu "**dự đoán bị so nhầm với đáp án của câu khác**", không phải dấu hiệu mô hình kém.
+
+Nguyên nhân: tuỳ chọn `group_by_length=True` (gom các mẫu cùng độ dài vào một batch để train nhanh hơn) trong `transformers` 4.57 **cũng xáo thứ tự tập dev**. Kiểm tra cho thấy 1.328/1.329 câu bị đặt sai vị trí. Hệ quả là điểm dev trong lúc train sai, và việc chọn checkpoint "tốt nhất" thành ra ngẫu nhiên.
+
+Cách sửa: tập dev luôn đi theo thứ tự gốc. Thêm một bước kiểm tra: trước khi tính điểm, so nhãn của từng dự đoán với nhãn dev gốc, lệch là báo lỗi ngay, không cho ra số sai nữa. Kết quả lần đầu bị bỏ toàn bộ. (Bài học: thêm một ví dụ cho nguyên tắc "kiểm tra số liệu bất thường".)
+
+R1 được chạy lại trên Colab. R2 chạy giữa chừng thì Colab hết hạn mức GPU miễn phí, nên được train trên **GPU của máy cá nhân (RTX 3060)**, nhanh gấp khoảng 2 lần.
+
+### 4.3. Kết quả trên dev
+
+| Reader | Đoạn văn | EM | F1 | HasAns-F1 | NoAns-acc | Từ chối nhầm |
+|---|---|---|---|---|---|---|
+| B1 XLM-R (mốc so sánh) | đoạn đúng | 37,4 | 51,5 | **61,7** | 30,9 | 20,5% |
+| R1 ViT5 | đoạn đúng | 37,4 | 51,1 | 57,3 | 38,2 | 27,7% |
+| **R2 ViT5** | đoạn đúng | **42,0** | **55,7** | 60,8 | **45,1** | 22,1% |
+| R1 ViT5 | retriever top-3 | 30,2 | 42,7 | 49,2 | 29,5 | 21,5% |
+| **R2 ViT5** | retriever top-3 | **38,7** | **51,5** | **55,5** | **43,5** | 23,1% |
+
+**Cách đọc:**
+- **R2 là Reader tốt nhất.** Khi cho sẵn đoạn đúng, R2 hơn B1 4,2 điểm F1. Phần lớn chênh lệch đến từ khả năng từ chối: NoAns-acc 45,1 so với 30,9. Trong khi đó, với câu có đáp án, R2 gần như ngang B1 (60,8 so với 61,7).
+- **R1 chỉ ngang B1.** R1 từ chối giỏi hơn B1 nhưng lại từ chối nhầm nhiều hơn, nên hai bên bù trừ nhau.
+- **Thêm đoạn nhiễu không làm mô hình "nhát" hơn.** Ta từng lo rằng khi 58,5% mẫu của R2 có đáp án "không có câu trả lời" thì mô hình sẽ hay từ chối nhầm. Thực tế ngược lại: R2 từ chối nhầm 22,1%, ít hơn R1 (27,7%). Học trên đoạn nhiễu giúp mô hình phân biệt rõ hơn đoạn liên quan và đoạn không liên quan.
+- **Trong điều kiện thực tế (đọc 3 đoạn retriever tìm được), R2 bền hơn R1 rất nhiều.** F1 của R2 chỉ giảm 4,2 điểm so với khi có đoạn đúng; R1 giảm 8,4 điểm. R1 chưa từng thấy đoạn nhiễu, nên gặp đoạn nào cũng cố trả lời (NoAns-acc tụt từ 38,2 xuống 29,5). Toàn hệ thống dùng R2 đạt F1 51,5, ngang B1 *khi B1 được cho sẵn đoạn đúng*.
+- Retriever đã đưa đoạn đúng vào top-3 ở 89,3% số câu. Khi tìm đúng, R2 đạt HasAns-F1 61,5; khi tìm sai, chỉ 4,6. Như vậy phần lớn lỗi còn lại nằm ở **khâu đọc**, không phải khâu tìm.
+- Bài Việt Nam dễ hơn bài thế giới (HasAns-F1 70,7 so với 57,1). Câu "khi nào" dễ nhất (78,6), câu "như thế nào" khó nhất (47,6) vì đáp án dài và khó xác định ranh giới.
+- ViT5 là mô hình sinh nên có thể "bịa", nhưng 98,1% câu trả lời của R2 có nguyên văn trong đoạn văn, nên việc bịa hiếm.
+- **Chưa đạt mục tiêu** đặt ra (HasAns-F1 ≥ 70, NoAns-acc ≥ 60%). Ở epoch thứ 5 (cuối cùng), F1 dev vẫn còn tăng, nên mô hình có thể chưa học hết. Giai đoạn 5 sẽ thử learning rate 3e-4 hoặc train lâu hơn, và chỉnh ngưỡng từ chối.
+
+---
+
 ## Các giai đoạn còn lại
 
 | Giai đoạn | Việc chính | Kết quả mong đợi |
 |---|---|---|
-| **4 — Reader ViT5** | Fine-tune `vit5-base` trên Colab. **R1:** train trên đoạn đúng. **R2:** train trên đoạn retriever tìm được (có lẫn nhiễu) để mô hình quen với điều kiện thực tế. Câu không trả lời được có nhãn "không có câu trả lời". | HasAns-F1 ≥ 70 trên đoạn đúng |
 | **5 — Thí nghiệm** | E1–E6 trả lời RQ1–RQ4 (xem PLAN §5). Chạy 3 seed, bootstrap khoảng tin cậy 95%. **Test chỉ chạy một lần** cho cấu hình cuối. | Toàn hệ thống F1 ≥ 55, NoAns-acc ≥ 60% |
 | **6 — Phân tích lỗi & demo** | Phân loại 100 câu sai (tìm sai / đọc sai / đáp án chuẩn có vấn đề / khác cách viết / bịa). Demo Gradio. Đo thời gian chạy. | |
 | **7 — Báo cáo** | Bảng và biểu đồ E1–E6, báo cáo cuối kỳ, README hướng dẫn tái lập kết quả. | |

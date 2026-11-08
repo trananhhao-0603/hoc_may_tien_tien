@@ -167,16 +167,34 @@ HMTT/
 
 **Xong khi:** `evaluate_pipeline.py` nhận một file dự đoán và in ra đủ bảng chỉ số. ✅
 
-### Giai đoạn 4 — Reader ViT5 text-to-text (3–4 ngày, Colab GPU)
+### Giai đoạn 4 — Reader ViT5 text-to-text (3–4 ngày, Colab GPU) ✅
 - [x] `src/reader/train_seq2seq.py` dùng `Seq2SeqTrainer`; cấu hình đọc từ `configs/reader_vit5.yaml`. Unit test tạo mẫu: `tests/test_seq2seq_data.py`. Đã chạy thử toàn luồng trên CPU (R1 và R2, 32 mẫu).
   - Input: `format_input()` của `infer.py` = `"<q> {question} </q> <ctx> {passage} </ctx>"`, max 512 token, mỗi input **một đoạn**.
   - Target: đáp án, max 64 token; câu không trả lời được → `"không có câu trả lời"`.
   - Mặc định: effective batch 32 (8 × 4), 5 epoch, early stopping (patience 2) theo F1 dev **trên đoạn đúng** (sinh greedy), bf16 nếu GPU hỗ trợ, nếu không thì fp16; seed 42.
   - **Phát sinh — lr 1e-4 thay vì 3e-5:** 3e-5 là mức của encoder kiểu BERT; T5/ViT5 với AdamW thường cần 1e-4 – 3e-4. Nếu F1 dev vẫn tăng ở epoch cuối thì thử 3e-4 (chọn trên dev).
   - **Phát sinh — fp16 trên T4:** T5 + fp16 có thể ra loss NaN. Script tự dừng khi gặp NaN và nhắc chạy lại với `--no_fp16`.
-- [ ] **R1 — train trên đoạn văn đúng**: 9.394 mẫu, 32,4% target là từ chối.
-- [ ] **R2 — đoạn đúng + đoạn nhiễu của retriever**: mỗi câu trả lời được thêm 1 đoạn lấy ngẫu nhiên trong top-5 hybrid (bỏ đoạn đúng). Đoạn nhiễu → target từ chối; nếu đoạn nhiễu chứa nguyên văn đáp án thì giữ đáp án (183 mẫu). Tổng 15.741 mẫu, **58,5% target là từ chối** → cần xem R2 có từ chối nhầm nhiều hơn R1 trên đoạn đúng không. Trainer tự xáo trộn mẫu.
+- [x] **R1 — train trên đoạn văn đúng**: 9.394 mẫu, 32,4% target là từ chối. Train trên Colab T4 (commit `5f83231`), 5 epoch, mất khoảng 80 phút; checkpoint tốt nhất là epoch 5.
+- [x] **R2 — đoạn đúng + đoạn nhiễu của retriever**: mỗi câu trả lời được thêm 1 đoạn lấy ngẫu nhiên trong top-5 hybrid (bỏ đoạn đúng). Đoạn nhiễu → target từ chối; nếu đoạn nhiễu chứa nguyên văn đáp án thì giữ đáp án (183 mẫu). Tổng 15.741 mẫu, **58,5% target là từ chối** → cần xem R2 có từ chối nhầm nhiều hơn R1 trên đoạn đúng không. Trainer tự xáo trộn mẫu.
   - **Phát sinh — cache truy hồi:** `data/index_qa/` không nằm trong git nên không có trên Colab → `src/retriever/cache_retrieval.py` tính sẵn top-20 hybrid cho train + dev vào `data/processed/retrieved_hybrid.parquet` (1 MB, commit được; kiểm lại R@5 dev 93,4 / train 88,0 khớp Giai đoạn 2). `get_contexts()` dùng cache nếu đủ; độ trễ truy hồi lấy theo số đo khi tạo cache. Test không cache.
+  - Train trên **GPU local RTX 3060**, vì Colab hết hạn mức GPU giữa chừng. Code train giống `5f83231` (file dự đoán ghi `69dc93b-dirty`, vì các commit sau đó chỉ thêm `baocao/` và sửa PLAN). 5 epoch, khoảng 0,9 s/bước, mất khoảng 45 phút; checkpoint tốt nhất là epoch 5.
+- [x] **Phát sinh — lỗi đo dev ở lần chạy đầu (07/11):** `group_by_length=True` khiến transformers 4.57 dùng `LengthGroupedSampler` (có ngẫu nhiên) cho cả tập **dev**. Dự đoán bị lệch thứ tự so với đáp án chuẩn (1328/1329 câu sai vị trí), nên F1 dev theo epoch là rác (HasAns-F1 khoảng 1%) và early stopping chọn checkpoint ngẫu nhiên. Đã sửa ở `5f83231`: dev duyệt tuần tự; `compute_metrics` kiểm `label_ids` khớp nhãn dev, lệch thì báo lỗi. File dự đoán từ `infer.py` không bị ảnh hưởng. Toàn bộ kết quả lần đầu bị bỏ, R1/R2 chạy lại.
+
+**Kết quả trên dev** (`reports/reader_vit5_dev.md`, sinh greedy, mỗi đoạn một input; với k=3 thì đọc từng đoạn rồi chọn đáp án theo `pick()`):
+
+| Reader | Đoạn văn | EM | F1 | HasAns-F1 | NoAns-acc | Từ chối nhầm |
+|---|---|---|---|---|---|---|
+| B1 XLM-R | đoạn đúng | 37,4 | 51,5 | **61,7** | 30,9 | 20,5% |
+| R1 ViT5 | đoạn đúng | 37,4 | 51,1 | 57,3 | 38,2 | 27,7% |
+| **R2 ViT5** | đoạn đúng | **42,0** | **55,7** | 60,8 | **45,1** | 22,1% |
+| R1 ViT5 | hybrid top-3 | 30,2 | 42,7 | 49,2 | 29,5 | 21,5% |
+| **R2 ViT5** | hybrid top-3 | **38,7** | **51,5** | **55,5** | **43,5** | 23,1% |
+
+- **R2 tốt nhất ở mọi chỉ số tổng hợp.** Với đoạn đúng, R2 hơn B1 4,2 F1 và hơn R1 4,6 F1. NoAns-acc của R2 là 45,1, cao hơn B1 14,2 điểm. Như vậy R2 sửa được điểm yếu từ chối của B1 mà gần như không mất HasAns-F1 (60,8 so với 61,7).
+- **Câu hỏi đặt ra ở R2 — đoạn nhiễu (58,5% target từ chối) có làm mô hình từ chối nhầm nhiều hơn không? Câu trả lời là không:** từ chối nhầm 22,1% so với 27,7% của R1.
+- **Khi đọc đoạn truy hồi, R2 bền hơn R1 rất nhiều:** F1 chỉ giảm 4,2 khi chuyển từ đoạn đúng sang top-3 (R1 giảm 8,4). R2 trên top-3 (51,5) ngang B1 trên đoạn đúng. HasAns-F1 khi tìm đúng đoạn là 61,5, khi tìm sai là 4,6. Retriever đặt đoạn đúng vào top-3 ở 89,3% câu, nên phần lớn lỗi còn lại nằm ở Reader.
+- Theo miền và loại câu hỏi (R2, đoạn đúng): bài Việt Nam HasAns-F1 70,7, bài thế giới 57,1. Dễ nhất là "khi nào" (78,6), khó nhất là "như thế nào" (47,6) và "khác" (41,4). Tỉ lệ dự đoán có nguyên văn trong đoạn là 98,1%, nên ít bịa.
+- **Chưa đạt mục tiêu §7** (HasAns-F1 ≥ 70, NoAns-acc ≥ 60%). Cả R1 lẫn R2 có F1 dev **vẫn tăng ở epoch 5** (R2: 54,2 → 55,9), nên còn dư địa: thử lr 3e-4 hoặc 8 epoch, và chỉnh ngưỡng từ chối trên dev (đưa sang Giai đoạn 5).
 - [x] `infer.py`: chạy toàn hệ thống (retrieve → read), lưu `data/predictions/{run}.jsonl` gồm câu hỏi, đoạn văn tìm được, dự đoán, đáp án chuẩn, độ trễ (có từ Giai đoạn 3).
 - [x] Model tốt nhất lưu ở `models/{r1,r2}_vit5` kèm `train_config.json` (cấu hình, commit, số mẫu, lịch sử F1 dev theo epoch); notebook `notebooks/colab_train_vit5.ipynb` chép lên Drive.
 
