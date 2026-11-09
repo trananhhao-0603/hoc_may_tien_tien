@@ -1,0 +1,101 @@
+qa_id,label,note
+train:0134-0012-0002,reader_span,Có đoạn đúng nhưng trích câu liền sau (bổ nhiệm Hội đồng Tư vấn) thay vì câu trả lời (bãi chức)
+validation:0014-0017-0006,gold_issue,Câu hỏi 'lí do gì' nhưng đáp án chuẩn là mệnh đề thời gian; dự đoán ('bảo vệ họ khỏi tham vọng của Hoàng đế') hợp lý hơn
+train:0134-0022-0003,paraphrase,"Thừa 'như là' ở đầu, nội dung trùng khớp (F1 0.97)"
+train:0039-0010-0002,paraphrase,'Hiệp ước Versailles' so với 'Versailles'
+train:0065-0006-0007,trap,
+validation:0012-0006-0008,paraphrase,
+validation:0012-0002-0008,tokenizer,'Mahātmā' thành 'Mahtm': ký tự ā không có trong từ vựng ViT5 nên bị rơi
+train:0134-0017-0001,tokenizer,'François II' thành 'Franois II': ký tự ç bị rơi
+train:0065-0017-0004,reader_span,
+validation:0012-0001-0003,retrieval,Đoạn đúng không có trong top-5 nên Reader từ chối
+train:0134-0004-0006,gold_issue,Câu được gắn nhãn không trả lời được nhưng đoạn văn ghi rõ mẹ của Mary là Catherine xứ Aragon; dự đoán đúng
+validation:0012-0022-0001,reader_span,
+train:0062-0027-0007,trap,
+validation:0012-0005-0009,reader_span,
+train:0062-0009-0006,trap,Câu bẫy đổi 'rút về' thành 'vào Thăng Long'; Reader vẫn trả lời 'tháng 12'
+train:0065-0012-0003,reader_refuse,"Đoạn đúng ở hạng 5 có đáp án, nhưng Reader từ chối ở cả 5 đoạn"
+train:0062-0011-0001,reader_span,
+train:0039-0022-0005,reader_span,
+validation:0012-0030-0001,trap,
+train:0065-0004-0009,trap,
+validation:0012-0010-0002,paraphrase,
+validation:0014-0008-0001,selection,"Đoạn đúng ở hạng 1, nhưng đáp án lấy từ đoạn hạng khác (nhà Đông Hán) có điểm cao hơn"
+validation:0012-0026-0006,paraphrase,
+train:0062-0012-0008,trap,
+train:0065-0019-0004,paraphrase,
+train:0039-0023-0004,paraphrase,
+validation:0014-0011-0006,trap,
+train:0039-0017-0005,reader_span,
+validation:0014-0004-0005,trap,
+train:0065-0025-0004,reader_refuse,
+train:0134-0036-0004,gold_issue,
+validation:0012-0016-0004,paraphrase,
+train:0062-0001-0002,paraphrase,Lấy đáp án từ đoạn khác ('Do là anh em bên ngoại'); về nội dung vẫn đúng
+train:0134-0004-0002,retrieval,
+train:0134-0025-0007,trap,
+train:0065-0020-0006,trap,
+validation:0012-0028-0003,trap,
+validation:0012-0034-0007,selection,
+train:0062-0024-0008,trap,
+validation:0012-0015-0001,retrieval,
+validation:0014-0015-0009,retrieval,
+train:0134-0027-0004,selection,
+validation:0012-0008-0003,paraphrase,
+train:0065-0007-0003,reader_refuse,
+train:0039-0015-0001,reader_refuse,
+validation:0012-0014-0002,trap,
+train:0039-0003-0004,retrieval,
+train:0039-0022-0003,retrieval,
+train:0134-0015-0002,paraphrase,
+validation:0014-0008-0008,trap,
+validation:0014-0001-0005,gold_issue,
+validation:0012-0031-0004,trap,
+train:0039-0001-0002,paraphrase,
+validation:0012-0028-0004,selection,
+validation:0012-0004-0003,reader_span,
+train:0065-0026-0002,paraphrase,
+train:0065-0003-0005,reader_refuse,Cần suy luận hai bước (ông nội = cha của Trần Thừa); Reader từ chối
+train:0065-0023-0006,trap,
+validation:0014-0007-0006,trap,
+train:0039-0015-0002,reader_refuse,
+train:0062-0022-0001,retrieval,
+validation:0012-0018-0002,paraphrase,
+train:0062-0028-0003,reader_span,
+train:0065-0002-0004,reader_span,
+train:0062-0011-0005,retrieval,
+validation:0012-0012-0006,paraphrase,
+train:0134-0029-0006,gold_issue,
+train:0039-0021-0006,trap,Câu bẫy đổi 'đại biểu' thành 'người dân'; Reader trả lời 361
+train:0039-0019-0001,retrieval,
+train:0065-0021-0004,paraphrase,
+validation:0012-0006-0005,trap,
+validation:0012-0003-0006,trap,Câu bẫy (tiếng Anh/tiếng Phạn); dự đoán 'satygraha' còn bị rơi ký tự ā
+train:0062-0002-0006,trap,
+train:0065-0017-0001,paraphrase,
+validation:0012-0014-0008,selection,
+train:0065-0014-0006,trap,
+train:0062-0006-0005,paraphrase,
+validation:0012-0014-0001,selection,"Đoạn đúng ở hạng 5, nhưng Reader lấy đáp án từ một đoạn về Việt Minh không liên quan"
+train:0065-0025-0009,trap,
+validation:0012-0012-0001,trap,
+train:0062-0024-0007,trap,
+validation:0012-0027-0001,retrieval,
+validation:0014-0004-0006,reader_refuse,
+validation:0012-0023-0001,retrieval,
+train:0065-0013-0007,trap,
+train:0134-0028-0004,reader_span,
+validation:0014-0006-0003,gold_issue,Đáp án chuẩn ('Trong các gian phòng...') không trả lời câu 'tên gọi của thứ gì' (đúng ra là cung điện cổ)
+validation:0012-0025-0003,retrieval,
+validation:0014-0017-0008,reader_refuse,
+train:0065-0021-0001,reader_refuse,
+validation:0012-0020-0006,paraphrase,
+train:0065-0003-0002,reader_span,
+train:0065-0014-0004,gold_issue,'nhà Lý thay thế bởi nhà Trần' cùng nghĩa với đoạn văn; câu không phải câu bẫy thật
+train:0062-0020-0002,reader_refuse,Cần tính toán theo bậc thuế (4 mẫu 2 sào thuộc bậc 'từ 2 mẫu 6 trở lên'); Reader từ chối
+train:0062-0021-0001,paraphrase,
+train:0062-0020-0007,trap,
+train:0039-0008-0001,reader_refuse,'Hoa Kỳ' so với 'phiến quân Mỹ' trong đoạn văn; Reader từ chối
+validation:0012-0028-0005,trap,
+validation:0012-0039-0004,reader_span,
+validation:0014-0009-0009,selection,

@@ -336,11 +336,39 @@ Mỗi khi mô hình định nói "không có câu trả lời", ta bắt nó sin
 
 ---
 
+## Giai đoạn 6 — Mô hình sai ở đâu, demo và tốc độ
+
+### 6.1. Đọc tay 100 câu sai
+Lấy ngẫu nhiên 100 câu mà hệ thống tốt nhất (r2ood, hybrid top-5) trả lời sai trên test. Đọc từng câu: câu hỏi, đáp án chuẩn, dự đoán, đoạn văn đúng và đoạn mô hình đã dùng. Mỗi câu gán một nhãn. Script `src/eval/error_analysis.py` gợi ý nhãn tự động, người chấm sửa lại sau khi đọc. Hai nhãn trùng nhau ở 70% số câu.
+
+| Loại lỗi | % | Ví dụ |
+|---|---|---|
+| Bị câu bẫy đánh lừa | 28 | "Quân Chiêm dẫn quân **vào** Thăng Long tháng mấy?" (đoạn văn ghi quân Chiêm **rút về**). Mô hình vẫn trả lời "tháng 12" |
+| Đúng nhưng khác cách viết | 20 | "năm 1910" so với "1910" |
+| Trích sai đoạn chữ | 13 | Lấy câu bên cạnh câu chứa đáp án |
+| Retriever không tìm thấy đoạn đúng | 12 | Câu hỏi quá chung: "Khuyết điểm của vua Louis là gì?" |
+| Từ chối nhầm | 11 | Câu cần suy luận: "ông nội của Trần Cảnh" = cha của Trần Thừa |
+| Có đoạn đúng nhưng chọn đáp án từ đoạn khác | 7 | |
+| Đáp án chuẩn có vấn đề | 7 | Câu bị gắn nhãn "không trả lời được" nhưng đoạn văn có đáp án |
+| Lỗi bộ từ vựng của ViT5 | 2 | "François" thành "Franois", "Mahātmā" thành "Mahtm" |
+| Bịa | 0 | |
+
+Ý chính: **phần lớn lỗi nằm ở khâu đọc** (khoảng một nửa), khâu tìm chỉ chiếm khoảng 1/5. Khoảng 1/4 số "lỗi" thật ra chấp nhận được (khác cách viết, hoặc đáp án chuẩn sai). Mô hình gần như không bịa. Lỗi nặng nhất là câu bẫy: chúng gần trùng đoạn văn, chỉ đổi một chi tiết.
+
+Cách sửa lỗi bộ từ vựng: tìm chuỗi gốc trong đoạn văn khớp với đáp án sau khi bỏ các ký tự lạ. Cách này chỉ tăng 0,2 F1 trên test và không đổi gì trên dev. Ý tưởng lại đến từ việc đọc lỗi trên test, nên **không tính** là cải tiến. Chỉ dùng để demo hiển thị đúng tên.
+
+### 6.2. Demo
+`python app.py` mở trang web (Gradio). Người dùng gõ câu hỏi, trang hiện đáp án, đoạn văn bằng chứng có tô đậm đáp án, bảng top-k đoạn tìm được (mỗi đoạn kèm đáp án mô hình đọc được) và thời gian từng khâu. Câu hỏi ngoài phạm vi kho, ví dụ về Microsoft, thì hệ thống trả lời "không có câu trả lời".
+
+### 6.3. Tốc độ
+Mỗi câu hỏi với top-5 mất khoảng **0,13 giây trên GPU** (RTX 3060) và **khoảng 1 giây trên CPU**. Gần như toàn bộ thời gian là của ViT5. Khâu tìm kiếm chỉ mất 11–54 ms, vì kho chỉ có 1.862 đoạn.
+
+---
+
 ## Các giai đoạn còn lại
 
 | Giai đoạn | Việc chính | Kết quả mong đợi |
 |---|---|---|
-| **6 — Phân tích lỗi & demo** | Phân loại 100 câu sai (tìm sai / đọc sai / đáp án chuẩn có vấn đề / khác cách viết / bịa). Demo Gradio. Đo thời gian chạy. | |
 | **7 — Báo cáo** | Bảng và biểu đồ E1–E6, báo cáo cuối kỳ, README hướng dẫn tái lập kết quả. | |
 
 ---

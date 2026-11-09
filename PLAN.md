@@ -237,10 +237,12 @@ Mọi lựa chọn đều làm trên **dev**. **Test chỉ chạy một lần** 
   - Retriever R@5 test: đoạn đúng nằm trong top-5 hybrid 90,2% ≥ 80%: đạt.
 
 
-### Giai đoạn 6 — Phân tích lỗi & demo (2 ngày)
-- [ ] Lấy ngẫu nhiên 100 câu trả lời sai, phân loại lỗi: tìm sai đoạn / đọc sai / đáp án chuẩn có vấn đề / đúng nhưng khác cách viết / bịa.
-- [ ] Demo Gradio: ô nhập câu hỏi → đáp án + đoạn văn bằng chứng (tô đậm) + top-k nguồn.
-- [ ] Đo độ trễ của từng khâu trên CPU và GPU.
+### Giai đoạn 6 — Phân tích lỗi & demo (2 ngày) ✅ (09/11/2026)
+Kết luận: `reports/gd6_summary.md`.
+- [x] Lấy ngẫu nhiên 100 câu trả lời sai, phân loại lỗi: tìm sai đoạn / đọc sai / đáp án chuẩn có vấn đề / đúng nhưng khác cách viết / bịa. Hệ thống được phân tích là r2ood hybrid top-5 trên test. Công cụ: `src/eval/error_analysis.py`, nhãn chấm tay ở `reports/error_labels.csv`, bảng ở `reports/error_analysis.md`. Thêm hai nhóm phát sinh khi đọc: *chọn nhầm đoạn* và *lỗi bộ từ vựng ViT5*. Kết quả: câu bẫy 28%, khác cách viết 20%, đọc sai span 13%, tìm sai đoạn 12%, từ chối nhầm 11%, chọn nhầm đoạn 7%, đáp án chuẩn có vấn đề 7%, bộ từ vựng 2%, bịa 0%. **Reader (52%) là nút thắt, không phải Retriever (19%).**
+- [x] Demo Gradio: ô nhập câu hỏi → đáp án + đoạn văn bằng chứng (tô đậm) + top-k nguồn. Chạy bằng `python app.py`, pipeline dùng chung ở `src/pipeline.py`. Đã thử gọi qua API của Gradio.
+- [x] Đo độ trễ của từng khâu trên CPU và GPU (`scripts/latency.py`, `reports/latency.md`). Top-5: GPU 128 ms, CPU khoảng 1,0 s mỗi câu. Reader chiếm 80–95% thời gian.
+- Phát sinh: hậu xử lý "lấy nguyên văn từ đoạn" sửa lỗi ký tự ngoài từ vựng (ç, ā). Trên test +0,2 F1, trên dev không đổi, nên chỉ dùng cho demo, không đổi số liệu GĐ5.
 
 ### Giai đoạn 7 — Báo cáo (2–3 ngày)
 - [ ] `reports/results.md`: các bảng E1–E6 và biểu đồ (Recall@k, F1 theo k, theo miền).
