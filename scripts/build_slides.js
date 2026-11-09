@@ -109,7 +109,7 @@ const chartBase = () => ({
       { x: MX, y: 3.35, w: 7.2, h: 0.8, fontSize: 18, color: MAROON, italic: true });
   txt(s, [{ text: "Giảng viên hướng dẫn: ", options: { bold: true } }, { text: "TS. Hà Minh Tân", options: { breakLine: true } },
           { text: "Nhóm 10: ", options: { bold: true } },
-          { text: "Nguyễn Duy Phong (240201021) · Hoàng Hải Đăng (2502010484) · Trần Anh Hào (250201058)" }],
+          { text: "Nguyễn Duy Phong (240201021) · Hoàng Hải Đăng (250201048) · Trần Anh Hào (250201058)" }],
       { x: MX, y: 4.75, w: 7.6, h: 0.9, fontSize: 14, paraSpaceAfter: 6 });
   // minh hoạ: một lượt hỏi đáp thật của hệ thống
   card(s, 8.55, 1.55, 4.2, 4.75, ROSE);
