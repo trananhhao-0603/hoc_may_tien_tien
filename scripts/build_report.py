@@ -7,6 +7,10 @@ Thay toàn bộ phần thân bằng nội dung dự án mới. Mọi bảng số
 số trang và xuất PDF.
 
     python scripts/build_report.py            # -> baocao/<tên mới>.docx
+
+CẢNH BÁO (09/11/2026): bản nộp `baocao/10-250201078-240201021-250201058.docx` đã được nhóm SỬA TAY
+(tên môn, giảng viên, thành viên...) và thêm link tài liệu tham khảo bằng scripts/add_reference_links.py.
+Chạy lại script này sẽ tạo bản khác, KHÔNG chứa các chỉnh sửa đó. Sửa tiếp trực tiếp trên file .docx.
 """
 from __future__ import annotations
 
