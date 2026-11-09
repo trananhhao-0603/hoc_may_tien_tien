@@ -18,9 +18,12 @@ from src.pipeline import DEFAULT_MODEL, ROOT, QAPipeline
 
 # Câu hỏi mẫu lấy từ tập dev (không dùng test cho demo)
 def _examples(n: int = 6) -> list[str]:
-    qa = pd.read_parquet(ROOT / "data/processed/qa_pairs.parquet", columns=["question", "split", "is_impossible"])
-    dev = qa[(qa.split == "dev") & ~qa.is_impossible]
-    return dev.sample(n, random_state=1).question.tolist() + [
+    qa = pd.read_parquet(ROOT / "data/processed/qa_pairs.parquet",
+                         columns=["question", "title", "split", "is_impossible"])
+    # mỗi bài dev một câu; bỏ bài Phong Nha - Kẻ Bàng (nội dung chủ yếu là địa lý)
+    dev = qa[(qa.split == "dev") & ~qa.is_impossible & ~qa.title.str.startswith("Vườn quốc gia")]
+    picks = dev.groupby("title").sample(1, random_state=1).question.tolist()[:n]
+    return picks + [
         "Chiến dịch Điện Biên Phủ kết thúc vào năm nào?",
         "Ai là người sáng lập ra Microsoft?",          # ngoài phạm vi kho -> mong đợi từ chối
     ]
