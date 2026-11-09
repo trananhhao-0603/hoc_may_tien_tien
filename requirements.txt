@@ -29,3 +29,4 @@ underthesea==9.5.0
 pyyaml==6.0.3
 pytest==9.2.0
 gradio==6.17.3
+matplotlib==3.11.2
