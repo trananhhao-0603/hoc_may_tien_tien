@@ -213,9 +213,32 @@ def cmd_snap(args):
     print("\n".join(lines))
 
 
+def cmd_rankpen(args):
+    """Thử trên DEV: chọn đáp án theo điểm Reader − λ·(hạng − 1) thay vì chỉ điểm Reader
+    (sửa nhóm lỗi 'chọn nhầm đoạn'). Chỉ dùng file dự đoán có sẵn, không chạy lại mô hình.
+    Cố ý KHÔNG chấm test (test chỉ dùng một lần, ở GĐ5)."""
+    from src.eval.metrics import NO_ANSWER, aggregate
+    run = args.run.replace("_test_", "_dev_")
+    assert "_dev_" in run, "rankpen chỉ chạy trên dev"
+    _, rows = read_predictions(PRED_DIR / f"{run}.jsonl")
+    lines = [f"Run `{run}`", "", "| λ | EM | F1 | HasAns_F1 | NoAns_acc |", "|---|---|---|---|---|"]
+    for lam in (0, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0):
+        out = []
+        for r in rows:
+            rank = {c["context_id"]: c["rank"] for c in r["contexts"]}
+            real = [p for p in r["extra"]["per_context"] if not is_no_answer(p["answer"])]
+            pred = (max(real, key=lambda p: p["score"] - lam * (rank[p["context_id"]] - 1))["answer"]
+                    if real else NO_ANSWER)
+            out.append({**score(pred, r["gold_answers"], r["is_impossible"]),
+                        "is_impossible": r["is_impossible"]})
+        a = aggregate(out)
+        lines.append(f"| {lam} | {a['EM']:.2f} | {a['F1']:.2f} | {a['HasAns_F1']:.2f} | {a['NoAns_acc']:.2f} |")
+    print("\n".join(lines))
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["sample", "report", "snap"])
+    ap.add_argument("cmd", choices=["sample", "report", "snap", "rankpen"])
     ap.add_argument("--run", default="r2ood_hybrid_k5_test_rs")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
@@ -224,7 +247,7 @@ def main():
         "r2m_gold_test_rs", "r2m_hybrid_k5_test_rs"])
     ap.add_argument("--tokenizer", default=str(ROOT / "models/r2_ood"))
     args = ap.parse_args()
-    {"sample": cmd_sample, "report": cmd_report, "snap": cmd_snap}[args.cmd](args)
+    {"sample": cmd_sample, "report": cmd_report, "snap": cmd_snap, "rankpen": cmd_rankpen}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -39,6 +39,18 @@ Lấy ngẫu nhiên 100 trong 779 câu có EM = 0 (seed 0), đọc từng câu, 
 
    Trên dev không đổi gì. Ý tưởng này lại nảy ra từ việc đọc lỗi trên test. Vì vậy **không coi là cải tiến** và không sửa số liệu GĐ5 (mức tăng +0,2 F1 cũng nhỏ hơn nhiều so với độ dao động giữa các seed). Demo dùng nó để hiển thị đúng tên riêng.
 
+6. **Hướng phát triển: phạt hạng đoạn khi chọn đáp án (chỉ thử trên DEV).** Ý tưởng sửa nhóm lỗi "chọn nhầm đoạn": chọn đáp án theo điểm Reader − λ·(hạng − 1) thay vì chỉ theo điểm Reader. Lấy lại từ file dự đoán có sẵn bằng `python -m src.eval.error_analysis rankpen`, không chạy lại mô hình:
+
+   | λ | EM | F1 | HasAns_F1 | NoAns_acc |
+   |---|---|---|---|---|
+   | 0 (hiện tại) | 39.43 | 52.92 | 57.32 | 43.94 |
+   | 0.02 | 40.03 | 53.91 | 58.80 | 43.94 |
+   | 0.05 | 40.18 | 54.02 | 58.95 | 43.94 |
+   | 0.2 | 40.33 | 54.06 | 59.02 | 43.94 |
+   | 1.0 | 40.33 | 53.91 | 58.79 | 43.94 |
+
+   F1 dev tăng khoảng +1,1 và ổn định với mọi λ ≥ 0,02. NoAns không đổi vì phạt hạng không ảnh hưởng tới việc từ chối. **Cố ý không chấm trên test**: test đã dùng một lần ở GĐ5, và nhóm quyết định (09/11) giữ nguyên số chính thức F1 test 53,4. Báo cáo ghi ý này ở mục Hướng phát triển, kèm nhận xét: mục tiêu F1 ≥ 55 (PLAN §7) là ước lượng ban đầu và chưa đạt.
+
 ## 2. Demo Gradio
 
 `python app.py` (mặc định `models/r2_ood`, cổng 7860; có `--device cpu`, `--share`).
