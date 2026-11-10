@@ -39,6 +39,13 @@ Mọi số liệu tổng hợp nằm trong `reports/*.json`, đã commit.
 
 ## Chạy demo
 
+**Dùng thử không cần cài đặt:**
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/trananhhao-0603/hoc_may_tien_tien/blob/main/notebooks/colab_demo.ipynb)
+— mở notebook, chọn *Runtime → Run all*, sau 2–3 phút bấm vào link `gradio.live` ở ô cuối. Checkpoint Reader và chỉ mục
+retriever nằm ở [taisu1412/vit5-history-qa](https://huggingface.co/taisu1412/vit5-history-qa) trên Hugging Face Hub.
+
+Chạy trên máy:
+
 ```bash
 python app.py                       # http://127.0.0.1:7860, model mặc định models/r2_ood
 python app.py --device cpu --share  # chạy CPU, tạo link công khai tạm thời

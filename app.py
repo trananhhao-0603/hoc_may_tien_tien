@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import html
+import os
 
 import pandas as pd
 
@@ -97,7 +98,8 @@ def build(pipe: QAPipeline):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default=str(DEFAULT_MODEL))
+    # QA_MODEL: thư mục checkpoint hoặc tên repo trên HF Hub (Space đặt biến này)
+    ap.add_argument("--model", default=os.environ.get("QA_MODEL", str(DEFAULT_MODEL)))
     ap.add_argument("--device", default=None, help="cuda | cpu (mặc định: tự chọn)")
     ap.add_argument("--port", type=int, default=7860)
     ap.add_argument("--share", action="store_true")

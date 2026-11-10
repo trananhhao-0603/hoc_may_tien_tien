@@ -1,0 +1,15 @@
+# Thư viện cho demo trên Hugging Face Spaces (chỉ suy luận, CPU).
+# Gradio do Space tự cài theo sdk_version trong README.md.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0
+
+pandas==3.1.0
+pyarrow==26.0.1
+transformers==4.57.6
+tokenizers==0.22.2
+huggingface-hub==0.36.2
+sentencepiece==0.2.2
+sentence-transformers==5.7.0
+faiss-cpu==1.15.1
+rank-bm25==0.2.2
+underthesea==9.5.0
