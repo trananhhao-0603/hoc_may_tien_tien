@@ -94,14 +94,14 @@ Nhóm "khác" (n = 23) không vẽ vì quá ít câu.
 | Nhóm | Số câu / 100 |
 |---|---|
 | Trả lời câu bẫy | 28 |
-| Đúng, khác cách viết | 20 |
+| Đúng nhưng khác cách viết | 20 |
 | Đọc sai span | 13 |
 | Tìm sai đoạn | 12 |
 | Từ chối nhầm | 11 |
 | Chọn nhầm đoạn | 7 |
 | Đáp án chuẩn có vấn đề | 7 |
 | Lỗi bộ từ vựng ViT5 | 2 |
-| Bịa | 0 |
+| Sinh nội dung ngoài văn bản | 0 |
 
 ![Lỗi](figures/error_types.png)
 

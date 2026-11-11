@@ -140,7 +140,7 @@ HMTT/
 
 ### Giai đoạn 3 — Metric & baseline (2 ngày) ✅
 - [x] `src/eval/metrics.py`: EM và F1 theo âm tiết, chuẩn hoá tiếng Việt (NFC, chữ thường, bỏ dấu câu, gộp khoảng trắng; **không** bỏ dấu thanh). Ghi riêng: HasAns-EM/F1, NoAns-accuracy, tỉ lệ từ chối sai (theo kiểu `squad_v2`).
-  - **Phát sinh:** kho dùng lẫn hai kiểu đặt dấu thanh ("hòa" 605 lần / "hoà" 953 lần, "thủy"/"thuỷ") → chuẩn hoá thêm vị trí dấu thanh (oa/oe/uy cuối âm tiết).
+  - **Phát sinh:** kho dùng lẫn hai kiểu đặt dấu thanh ("hòa" 604 lần / "hoà" 51 lần, "thủy" 71 / "thuỷ" 9 lần, đếm theo từ) → chuẩn hoá thêm vị trí dấu thanh (oa/oe/uy cuối âm tiết).
   - **Phát sinh:** "từ chối" = chuỗi thô rỗng hoặc đúng nhãn `"không có câu trả lời"`. Chuỗi chỉ toàn ký hiệu **không** tính là từ chối, vì nếu tính thì ViT5 zero-shot (sinh `*>+>`) được NoAns-acc 62% và EM 20,4 một cách ảo.
 - [x] Unit test: `tests/test_metrics.py` ("năm 1954" vs "1954" → F1 2/3, hoa/thường, NFC/NFD, vị trí dấu thanh, đáp án rỗng, nhãn từ chối) và `tests/test_evaluate.py`.
 - [x] `src/eval/evaluate_pipeline.py`: nhận một hoặc nhiều file `data/predictions/{run}.jsonl` (định dạng ở `src/eval/predictions.py`), in bảng tổng / VN–TG / loại câu hỏi (`qtype.py`), tỉ lệ đoạn đúng nằm trong các đoạn đã đọc, HasAns-F1 khi tìm đúng/sai, tỉ lệ dự đoán có nguyên văn trong đoạn (chỉ báo "bịa"). `--out` ghi `.md` + `.json`.

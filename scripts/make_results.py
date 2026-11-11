@@ -228,9 +228,10 @@ def main():
            "(`gd5_results.md`, mục Bootstrap). Các số ở mục này chép từ hai file trên.", ""]
 
     # ---------------------------------------------------------------- Phân tích lỗi
-    names = {"trap": "Trả lời câu bẫy", "paraphrase": "Đúng, khác cách viết", "reader_span": "Đọc sai span",
+    names = {"trap": "Trả lời câu bẫy", "paraphrase": "Đúng nhưng khác cách viết", "reader_span": "Đọc sai span",
              "retrieval": "Tìm sai đoạn", "reader_refuse": "Từ chối nhầm", "selection": "Chọn nhầm đoạn",
-             "gold_issue": "Đáp án chuẩn có vấn đề", "tokenizer": "Lỗi bộ từ vựng ViT5", "hallucination": "Bịa"}
+             "gold_issue": "Đáp án chuẩn có vấn đề", "tokenizer": "Lỗi bộ từ vựng ViT5",
+             "hallucination": "Sinh nội dung ngoài văn bản"}
     cnt = err["label"].value_counts().reindex(list(names), fill_value=0).sort_values(ascending=False)
     f6 = hbar_chart([names[k] for k in cnt.index], [float(v) for v in cnt.values],
                     "Phân loại 100 câu sai (hệ thống cuối, test)", "Số câu (= %)", "error_types.png",
