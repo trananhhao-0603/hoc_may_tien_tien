@@ -75,8 +75,8 @@ E3 — tách lỗi tìm / đọc: đoạn đúng nằm trong top-5 ở 90.2% câ
 | Cấu hình (test) | VN | TG |
 |---|---|---|
 | R2 · đoạn đúng | 59.1 | 56.5 |
-| R2+OOD · đoạn đúng | 61.3 | 59.8 |
-| R2+OOD · hybrid top-5 | 54.5 | 52.8 |
+| E5 · đoạn đúng | 61.3 | 59.8 |
+| E5 · hybrid top-5 | 54.5 | 52.8 |
 
 ![Theo miền](figures/f1_by_domain_test.png)
 

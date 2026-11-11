@@ -202,8 +202,8 @@ def main():
            f"{o(test, 'r2ood_gold_test_rs')['F1'] - best['F1']:.1f} F1.", ""]
 
     # ---------------------------------------------------------------- Theo miền / loại câu
-    cfg = [("R2 · đoạn đúng", "r2m_gold_test_rs"), ("R2+OOD · đoạn đúng", "r2ood_gold_test_rs"),
-           ("R2+OOD · hybrid top-5", "r2ood_hybrid_k5_test_rs")]
+    cfg = [("R2 · đoạn đúng", "r2m_gold_test_rs"), ("E5 · đoạn đúng", "r2ood_gold_test_rs"),
+           ("E5 · hybrid top-5", "r2ood_hybrid_k5_test_rs")]
     vn = [test[k]["by_domain"]["VN"]["F1"] for _, k in cfg]
     tg = [test[k]["by_domain"]["TG"]["F1"] for _, k in cfg]
     f4 = grouped_bars([n for n, _ in cfg], [("Lịch sử Việt Nam", vn, C1), ("Lịch sử thế giới", tg, C2)],
